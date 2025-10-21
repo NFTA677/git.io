@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Converter Tools</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        header {
+            background-color: #333;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        .tool {
+            margin: 1rem 0;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .tool button {
+            padding: 0.5rem 1rem;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .tool button:hover {
+            background-color: #0056b3;
+        }
+        input[type="file"] {
+            margin-top: 1rem;
+        }
+        .download-link {
+            display: none;
+            margin-top: 1rem;
+            color: #007BFF;
+            text-decoration: none;
+        }
+        .download-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>PDF Converter Tools</h1>
+    </header>
+    <div class="container">
+        <div class="tool">
+            <h2>Convert PDF to Word</h2>
+            <p>Upload your PDF file and convert it to an editable Word document.</p>
+            <input type="file" id="pdfToWord" accept=".pdf">
+            <button onclick="convertFile('Word')">Convert Now</button>
+            <a id="downloadWord" class="download-link" download>Download Word File</a>
+        </div>
+        <div class="tool">
+            <h2>Convert PDF to Image</h2>
+            <p>Upload your PDF file and convert it to high-quality images.</p>
+            <input type="file" id="pdfToImage" accept=".pdf">
+            <button onclick="convertFile('Image')">Convert Now</button>
+            <a id="downloadImage" class="download-link" download>Download Image File</a>
+        </div>
+        <div class="tool">
+            <h2>Convert PDF to PowerPoint</h2>
+            <p>Upload your PDF file and convert it to a PowerPoint presentation.</p>
+            <input type="file" id="pdfToPPT" accept=".pdf">
+            <button onclick="convertFile('PowerPoint')">Convert Now</button>
+            <a id="downloadPowerPoint" class="download-link" download>Download PowerPoint File</a>
+        </div>
+    </div>
+    <script>
+        function convertFile(type) {
+            const fileInput = document.querySelector(`#pdfTo${type}`);
+            const downloadLink = document.querySelector(`#download${type}`);
+            if (fileInput.files.length === 0) {
+                alert('Please upload a PDF file first.');
+                return;
+            }
+            const fileName = fileInput.files[0].name;
+            alert(`Converting "${fileName}" to ${type}...`);
+            // Simulate conversion process
+            setTimeout(() => {
+                alert(`Conversion to ${type} completed!`);
+                // Simulate a converted file for download
+                const convertedFileName = fileName.replace('.pdf', `.${type.toLowerCase()}`);
+                const blob = new Blob([`This is a simulated ${type} file.`], { type: 'application/octet-stream' });
+                const url = URL.createObjectURL(blob);
+                downloadLink.href = url;
+                downloadLink.download = convertedFileName;
+                downloadLink.style.display = 'inline-block';
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

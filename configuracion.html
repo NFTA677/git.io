@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Configuraciones | NFTA-CORP</title>
+  <link rel="stylesheet" href="css\configuracion.css">
+</head>
+<body>
+  <button class="back-btn" onclick="goBackToDashboard()">← Volver al Dashboard</button>
+  
+  <div class="config-container">
+    <div class="config-header">
+      <h1>Configuraciones</h1>
+      <p>Personaliza tu experiencia en el dashboard</p>
+    </div>
+    
+    <div class="success-message" id="successMessage">
+      ¡Configuración guardada exitosamente!
+    </div>
+    
+    <div class="error-message" id="errorMessage">
+      Error al guardar la configuración. Inténtalo de nuevo.
+    </div>
+    
+    <div class="config-sections">
+      <!-- Sección de Color del Tema -->
+      <div class="config-section">
+        <h2>
+          <div class="section-icon">🎨</div>
+          Color del Tema
+        </h2>
+        <div class="current-info">
+          <strong>Color actual:</strong> <span id="currentColorName">Gris Oscuro</span>
+        </div>
+        <div class="form-group">
+          <label>Selecciona un color para tu tema:</label>
+          <div class="color-picker-container">
+            <div class="color-option selected" data-color="#181818" data-name="Gris Oscuro" style="background: #181818;"></div>
+            <div class="color-option" data-color="#2c3e50" data-name="Azul Oscuro" style="background: #2c3e50;"></div>
+            <div class="color-option" data-color="#27ae60" data-name="Verde" style="background: #27ae60;"></div>
+            <div class="color-option" data-color="#e74c3c" data-name="Rojo" style="background: #e74c3c;"></div>
+            <div class="color-option" data-color="#f39c12" data-name="Naranja" style="background: #f39c12;"></div>
+            <div class="color-option" data-color="#9b59b6" data-name="Morado" style="background: #9b59b6;"></div>
+            <div class="color-option" data-color="#3498db" data-name="Azul" style="background: #3498db;"></div>
+            <div class="color-option" data-color="#1abc9c" data-name="Turquesa" style="background: #1abc9c;"></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Sección de Información Personal -->
+      <div class="config-section">
+        <h2>
+          <div class="section-icon">👤</div>
+          Información Personal
+        </h2>
+        <div class="current-info">
+          <strong>Usuario actual:</strong> <span id="currentUsername">Usuario</span>
+        </div>
+        <div class="form-group">
+          <label for="newUsername">Nuevo nombre de usuario:</label>
+          <input type="text" id="newUsername" placeholder="Ingresa tu nuevo nombre">
+        </div>
+      </div>
+      
+      <!-- Sección de Seguridad -->
+      <div class="config-section">
+        <h2>
+          <div class="section-icon">🔒</div>
+          Seguridad
+        </h2>
+        <div class="form-group">
+          <label for="currentPassword">Contraseña actual:</label>
+          <input type="password" id="currentPassword" placeholder="Ingresa tu contraseña actual">
+        </div>
+        <div class="form-group">
+          <label for="newPassword">Nueva contraseña:</label>
+          <input type="password" id="newPassword" placeholder="Ingresa tu nueva contraseña">
+          <div class="password-requirements">
+            La contraseña debe tener al menos 4 caracteres.
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="confirmPassword">Confirmar nueva contraseña:</label>
+          <input type="password" id="confirmPassword" placeholder="Confirma tu nueva contraseña">
+        </div>
+      </div>
+      
+      <button class="save-btn" onclick="saveConfiguration()">
+        💾 Guardar Configuraciones
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // Obtener usuario actual
+    const currentUser = localStorage.getItem('currentUser');
+    const users = JSON.parse(localStorage.getItem('users')) || {};
+    
+    // Inicializar interfaz
+    function initializeConfig() {
+      if (currentUser && users[currentUser]) {
+        const user = users[currentUser];
+        document.getElementById('currentUsername').textContent = user.name || currentUser;
+        document.getElementById('newUsername').value = user.name || currentUser;
+        
+        // Establecer color actual
+        const currentColor = user.color || '#181818';
+        const colorOptions = document.querySelectorAll('.color-option');
+        colorOptions.forEach(option => {
+          option.classList.remove('selected');
+          if (option.dataset.color === currentColor) {
+            option.classList.add('selected');
+            document.getElementById('currentColorName').textContent = option.dataset.name;
+          }
+        });
+      }
+    }
+    
+    // Manejar selección de colores
+    document.querySelectorAll('.color-option').forEach(option => {
+      option.addEventListener('click', function() {
+        document.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('selected'));
+        this.classList.add('selected');
+        document.getElementById('currentColorName').textContent = this.dataset.name;
+      });
+    });
+    
+    // Guardar configuración
+    function saveConfiguration() {
+      if (!currentUser) {
+        showError('No hay usuario logueado');
+        return;
+      }
+      
+      const newUsername = document.getElementById('newUsername').value.trim();
+      const currentPassword = document.getElementById('currentPassword').value;
+      const newPassword = document.getElementById('newPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      const selectedColor = document.querySelector('.color-option.selected').dataset.color;
+      const selectedColorName = document.querySelector('.color-option.selected').dataset.name;
+      
+      // Validaciones
+      if (!newUsername) {
+        showError('El nombre de usuario no puede estar vacío');
+        return;
+      }
+      
+      if (newPassword && newPassword !== confirmPassword) {
+        showError('Las contraseñas no coinciden');
+        return;
+      }
+      
+      if (newPassword && newPassword.length < 4) {
+        showError('La contraseña debe tener al menos 4 caracteres');
+        return;
+      }
+      
+      if (newPassword && users[currentUser].password !== currentPassword) {
+        showError('La contraseña actual es incorrecta');
+        return;
+      }
+      
+      try {
+        // Actualizar datos del usuario
+        users[currentUser].name = newUsername;
+        users[currentUser].color = selectedColor;
+        
+        if (newPassword) {
+          users[currentUser].password = newPassword;
+        }
+        
+        // Guardar en localStorage
+        localStorage.setItem('users', JSON.stringify(users));
+        
+        // Limpiar formularios
+        document.getElementById('currentPassword').value = '';
+        document.getElementById('newPassword').value = '';
+        document.getElementById('confirmPassword').value = '';
+        
+        showSuccess('Configuración guardada exitosamente');
+        
+        // Actualizar información actual
+        document.getElementById('currentUsername').textContent = newUsername;
+        document.getElementById('currentColorName').textContent = selectedColorName;
+        
+      } catch (error) {
+        showError('Error al guardar la configuración');
+        console.error('Error:', error);
+      }
+    }
+    
+    // Mostrar mensaje de éxito
+    function showSuccess(message) {
+      const successDiv = document.getElementById('successMessage');
+      successDiv.textContent = message;
+      successDiv.style.display = 'block';
+      
+      setTimeout(() => {
+        successDiv.style.display = 'none';
+      }, 3000);
+    }
+    
+    // Mostrar mensaje de error
+    function showError(message) {
+      const errorDiv = document.getElementById('errorMessage');
+      errorDiv.textContent = message;
+      errorDiv.style.display = 'block';
+      
+      setTimeout(() => {
+        errorDiv.style.display = 'none';
+      }, 3000);
+    }
+    
+    // Función para regresar al dashboard
+    function goBackToDashboard() {
+      // Marcar que se han hecho cambios para refrescar el dashboard
+      localStorage.setItem('configChanged', 'true');
+      window.location.href = 'dashboard.html';
+    }
+    
+    // Inicializar cuando se carga la página
+    document.addEventListener('DOMContentLoaded', initializeConfig);
+  </script>
+</body>
+</html>

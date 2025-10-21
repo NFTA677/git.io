@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Mensajes | NFTA-CORP</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root{
+            --bg:#0f1724;
+            --card:#0b1220;
+            --muted:#98a0b3;
+            --accent:#7c5cff;
+            --accent-2:#00d4ff;
+            --surface:#0b1220;
+            --text:#e6eef8;
+            --success:#22c55e;
+            --danger:#ff6b6b;
+            --glass: rgba(255,255,255,0.03);
+        }
+        *{box-sizing:border-box;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;}
+        html,body{height:100%;margin:0;background:linear-gradient(180deg,#071226 0%, #071827 100%);color:var(--text);-webkit-font-smoothing:antialiased;}
+        .app{display:flex;height:100vh;gap:20px;padding:20px;align-items:stretch}
+        /* Sidebar */
+        .sidebar{
+            width:320px;min-width:260px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+            border-radius:12px;padding:18px;display:flex;flex-direction:column;box-shadow:0 6px 30px rgba(2,6,23,0.6);
+            border:1px solid rgba(255,255,255,0.03);
+        }
+        .side-top{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+        .logo{
+            width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-weight:700;color:white;font-size:20px;box-shadow:0 6px 18px rgba(92,30,255,0.15);
+        }
+        .brand h1{margin:0;font-size:16px;letter-spacing:0.2px}
+        .brand p{margin:0;color:var(--muted);font-size:13px}
+        .new-chat-btn{
+            margin-top:12px;background:linear-gradient(90deg,var(--accent),#955bff);color:white;border:none;padding:10px;border-radius:10px;cursor:pointer;font-weight:600;
+            display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .12s ease,box-shadow .12s;
+        }
+        .new-chat-btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(124,92,255,0.18)}
+        .search{display:flex;gap:10px;align-items:center;background:var(--glass);padding:10px;border-radius:10px;margin-top:14px;border:1px solid rgba(255,255,255,0.02)}
+        .search svg{opacity:.9;color:var(--muted)}
+        .search input{background:transparent;border:0;outline:none;color:var(--text);width:100%;font-size:14px}
+        .chat-list{margin-top:12px;overflow:auto;padding-right:6px}
+        .chat-item{display:flex;gap:12px;align-items:center;padding:10px;border-radius:10px;cursor:pointer;transition:background .12s,transform .08s;margin-bottom:6px}
+        .chat-item:hover{background:rgba(255,255,255,0.02);transform:translateY(-2px)}
+        .chat-item.active{background:linear-gradient(90deg, rgba(124,92,255,0.12), rgba(0,212,255,0.02));box-shadow:inset 0 0 0 1px rgba(124,92,255,0.06)}
+        .avatar{width:48px;height:48px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:700;color:white}
+        .chat-meta h4{margin:0;font-size:14px}
+        .chat-meta p{margin:4px 0 0;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
+        .unread{background:var(--accent);color:white;padding:5px 8px;border-radius:999px;font-size:12px;display:inline-block;margin-top:6px}
+        /* Chat area */
+        .chat-area{flex:1;display:flex;flex-direction:column;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.01));border-radius:12px;padding:0;overflow:hidden;border:1px solid rgba(255,255,255,0.03);box-shadow:0 6px 30px rgba(2,6,23,0.6)}
+        .chat-header{display:flex;align-items:center;gap:12px;padding:18px;border-bottom:1px solid rgba(255,255,255,0.02);cursor:default;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00))}
+        .chat-header h3{margin:0;font-size:16px}
+        .chat-header p{margin:2px 0 0;color:var(--muted);font-size:13px}
+        .message-display{flex:1;padding:20px;overflow:auto;background-image:linear-gradient(180deg, rgba(255,255,255,0.002), transparent);display:flex;flex-direction:column;gap:12px}
+        .no-messages{margin:0;text-align:center;width:100%}
+        .message{max-width:70%;padding:12px 14px;border-radius:12px;position:relative;box-shadow:0 6px 18px rgba(2,6,23,0.2);display:inline-block}
+        .message.sent{margin-left:auto;background:linear-gradient(135deg,var(--accent),#6ecfff);color:#021423;border-bottom-right-radius:6px}
+        .message.received{background:var(--surface);color:var(--text);border-bottom-left-radius:6px}
+        .message .sender-name{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+        .message p{margin:0;font-size:14px;line-height:1.35;word-wrap:break-word}
+        .message-time{display:block;font-size:11px;color:var(--muted);margin-top:8px;text-align:right}
+        .message-input-area{display:flex;gap:10px;padding:14px;border-top:1px solid rgba(255,255,255,0.02);align-items:flex-end;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02))}
+        #messageText{flex:1;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:var(--text);resize:none;min-height:44px}
+        .btn-send{background:linear-gradient(90deg,var(--accent),#5fe9ff);border:none;padding:10px 14px;border-radius:10px;color:#042;cursor:pointer;font-weight:700}
+        .btn-send:hover{transform:translateY(-1px)}
+        /* Modal */
+        .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(2,6,23,0.5);z-index:60}
+        .modal[aria-hidden="false"]{display:flex}
+        .modal-content{width:520px;max-width:94%;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:18px;border:1px solid rgba(255,255,255,0.03)}
+        .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+        .modal-close{background:transparent;border:none;color:var(--muted);font-size:22px;cursor:pointer}
+        .form-group{margin-bottom:10px}
+        label{display:block;margin-bottom:6px;font-size:13px;color:var(--muted)}
+        select,input[type="text"]{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.02);background:transparent;color:var(--text)}
+        .checkbox-list label{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;margin-bottom:6px;background:rgba(255,255,255,0.01)}
+        .modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
+        .btn-primary{background:linear-gradient(90deg,var(--accent),#6ef);border:none;padding:10px 12px;border-radius:8px;color:white;cursor:pointer}
+        .btn-secondary{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:9px 12px;border-radius:8px;color:var(--muted);cursor:pointer}
+        /* scrollbar */
+        .chat-list::-webkit-scrollbar,.message-display::-webkit-scrollbar{width:8px}
+        .chat-list::-webkit-scrollbar-thumb,.message-display::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.03);border-radius:8px}
+        @media(max-width:900px){
+            .app{padding:12px}
+            .sidebar{display:none}
+            .chat-area{border-radius:12px}
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="sidebar">
+            <div class="side-top">
+                <div class="logo">N</div>
+                <div class="brand">
+                    <h1>NFTA-CORP</h1>
+                    <p>Mensajes internos</p>
+                </div>
+            </div>
+
+            <button class="new-chat-btn" onclick="showNewChatModal()">➕ Nuevo</button>
+
+            <div class="search" style="margin-top:12px">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="opacity:.9"><path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="11" cy="11" r="6" stroke="currentColor" stroke-width="2"/></svg>
+                <input id="chatSearch" placeholder="Buscar chat o usuario..." oninput="filterChats()">
+            </div>
+
+            <div id="chatList" class="chat-list" aria-live="polite">
+                <!-- Chats cargados aquí -->
+            </div>
+        </div>
+
+        <div class="chat-area">
+            <div id="chatHeader" class="chat-header" onclick="goBackToDashboard()"></div>
+                <div>
+                    <h3>Selecciona un chat para empezar</h3>
+                    <p>Conversaciones privadas y grupales</p>
+                </div>
+            </div>
+
+            <div id="messageDisplay" class="message-display">
+                <p class="no-messages" style="color:var(--muted)">Selecciona un chat para ver los mensajes.</p>
+            </div>
+
+            <div id="messageInputArea" class="message-input-area" style="display:none">
+                <textarea id="messageText" placeholder="Escribe tu mensaje..." rows="2"></textarea>
+                <button class="btn-send" onclick="sendMessage()">Enviar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Nuevo Chat -->
+    <div id="newChatModal" class="modal" aria-hidden="true">
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+            <div class="modal-header">
+                <h2 id="modalTitle">Iniciar Nuevo Chat</h2>
+                <button class="modal-close" onclick="hideNewChatModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="chatType">Tipo de Chat:</label>
+                    <select id="chatType" onchange="toggleGroupChatOptions()">
+                        <option value="private">Chat Privado</option>
+                        <option value="group">Chat Grupal</option>
+                    </select>
+                </div>
+
+                <div id="privateChatOptions" class="form-group">
+                    <label for="privateChatUser">Selecciona un usuario:</label>
+                    <select id="privateChatUser">
+                        <!-- Opciones dinámicas -->
+                    </select>
+                </div>
+
+                <div id="groupChatOptions" style="display:none">
+                    <div class="form-group">
+                        <label for="groupChatName">Nombre del Grupo:</label>
+                        <input type="text" id="groupChatName" placeholder="Ej: Equipo de Diseño">
+                    </div>
+                    <div class="form-group">
+                        <label>Selecciona miembros del grupo:</label>
+                        <div id="groupChatMembers" class="checkbox-list">
+                            <!-- Checkboxes dinámicas -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="hideNewChatModal()">Cancelar</button>
+                <button class="btn-primary" onclick="createNewChat()">Crear Chat</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const currentUser = localStorage.getItem('currentUser');
+        const users = JSON.parse(localStorage.getItem('users')) || {};
+        let chats = JSON.parse(localStorage.getItem('chats')) || [];
+        let activeChat = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!currentUser) {
+                alert('Debes iniciar sesión para acceder a los mensajes.');
+                window.location.href = 'index.html';
+                return;
+            }
+            loadUserOptions();
+            loadChatList();
+        });
+
+        function goBackToDashboard() {
+            window.location.href = 'dashboard.html';
+        }
+
+        function getInitials(name){ 
+            if(!name) return '?';
+            return name.split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase();
+        }
+
+        function niceTime(iso){
+            try{
+                const d=new Date(iso);
+                return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+            }catch(e){ return '';}
+        }
+
+        function loadChatList(filter=''){
+            const chatListDiv = document.getElementById('chatList');
+            chatListDiv.innerHTML = '';
+
+            const userChats = chats.filter(chat => chat.participants && chat.participants.includes(currentUser));
+            const sorted = userChats.sort((a,b)=>{
+                const ta = a.messages?.length ? new Date(a.messages[a.messages.length-1].timestamp) : 0;
+                const tb = b.messages?.length ? new Date(b.messages[b.messages.length-1].timestamp) : 0;
+                return tb - ta;
+            });
+
+            sorted.forEach(chat => {
+                const other = chat.participants.find(p => p !== currentUser);
+                const chatName = chat.type === 'private'
+                    ? users[other]?.name || other
+                    : chat.name || 'Grupo';
+
+                if(filter && !chatName.toLowerCase().includes(filter.toLowerCase())) return;
+
+                const lastMsg = chat.messages?.slice(-1)[0];
+                const unread = (chat.unread && chat.unread[currentUser]) || 0;
+
+                const item = document.createElement('div');
+                item.className = `chat-item ${activeChat && activeChat.id === chat.id ? 'active' : ''}`;
+                item.onclick = () => openChat(chat.id);
+
+                const avatar = document.createElement('div');
+                avatar.className = 'avatar';
+                avatar.style.background = chat.type==='private' 
+                    ? `linear-gradient(135deg, ${stringToColor(other)}, rgba(255,255,255,0.06))`
+                    : `linear-gradient(135deg, ${stringToColor(chat.name || chat.id)}, rgba(255,255,255,0.06))`;
+                avatar.textContent = chat.type==='private'
+                    ? getInitials(users[other]?.name || other)
+                    : getInitials(chat.name || 'GR');
+
+                const meta = document.createElement('div');
+                meta.className = 'chat-meta';
+                meta.innerHTML = `<h4>${escapeHtml(chatName)}</h4>
+                                  <p>${lastMsg ? (users[lastMsg.sender]?.name ? users[lastMsg.sender].name + ': ' : '') + (truncate(lastMsg.text, 40)) : 'Sin mensajes aún'}</p>`;
+
+                const right = document.createElement('div');
+                right.style.textAlign='right';
+                right.style.minWidth='64px';
+                right.innerHTML = `<div style="font-size:12px;color:var(--muted)">${lastMsg ? niceTime(lastMsg.timestamp) : ''}</div>
+                                   ${unread? `<div class="unread">${unread}</div>` : ''}`;
+
+                item.appendChild(avatar);
+                item.appendChild(meta);
+                item.appendChild(right);
+                chatListDiv.appendChild(item);
+            });
+        }
+
+        function stringToColor(str){
+            let h=0;
+            for(let i=0;i<str.length;i++) h = str.charCodeAt(i) + ((h<<5)-h);
+            const c = (h & 0x00FFFFFF).toString(16).toUpperCase();
+            return `#${'00000'.substring(0,6 - c.length) + c}`;
+        }
+
+        function truncate(text, n){
+            if(!text) return '';
+            return text.length>n ? text.slice(0,n-1)+'…' : text;
+        }
+
+        function escapeHtml(s){
+            if(!s) return '';
+            return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        function loadUserOptions(){
+            const privateChatUserSelect = document.getElementById('privateChatUser');
+            const groupChatMembersDiv = document.getElementById('groupChatMembers');
+
+            privateChatUserSelect.innerHTML = '<option value="">Selecciona un usuario</option>';
+            groupChatMembersDiv.innerHTML = '';
+
+            Object.keys(users).forEach(username => {
+                if (username === currentUser) return;
+                const option = document.createElement('option');
+                option.value = username;
+                option.textContent = users[username].name || username;
+                privateChatUserSelect.appendChild(option);
+
+                const checkboxLabel = document.createElement('label');
+                checkboxLabel.innerHTML = `
+                    <input type="checkbox" value="${username}">
+                    ${escapeHtml(users[username].name || username)}
+                `;
+                groupChatMembersDiv.appendChild(checkboxLabel);
+            });
+        }
+
+        function showNewChatModal(){
+            document.getElementById('newChatModal').style.display='flex';
+            document.getElementById('newChatModal').setAttribute('aria-hidden','false');
+            toggleGroupChatOptions();
+        }
+
+        function hideNewChatModal(){
+            document.getElementById('newChatModal').style.display='none';
+            document.getElementById('newChatModal').setAttribute('aria-hidden','true');
+            document.getElementById('chatType').value='private';
+            document.getElementById('privateChatUser').value='';
+            document.getElementById('groupChatName').value='';
+            document.querySelectorAll('#groupChatMembers input[type="checkbox"]').forEach(cb=>cb.checked=false);
+        }
+
+        function toggleGroupChatOptions(){
+            const chatType = document.getElementById('chatType').value;
+            document.getElementById('privateChatOptions').style.display = chatType === 'private' ? 'block' : 'none';
+            document.getElementById('groupChatOptions').style.display = chatType === 'group' ? 'block' : 'none';
+        }
+
+        function createNewChat(){
+            const chatType = document.getElementById('chatType').value;
+            let newChat = { id: Date.now(), type: chatType, messages: [], unread: {} };
+
+            if(chatType==='private'){
+                const selectedUser = document.getElementById('privateChatUser').value;
+                if(!selectedUser){ alert('Por favor, selecciona un usuario para el chat privado.'); return; }
+                newChat.participants = [currentUser, selectedUser];
+            } else {
+                const groupName = document.getElementById('groupChatName').value.trim();
+                const selectedMembers = Array.from(document.querySelectorAll('#groupChatMembers input[type="checkbox"]:checked')).map(cb=>cb.value);
+                if(!groupName){ alert('Por favor, ingresa un nombre para el chat grupal.'); return; }
+                if(selectedMembers.length===0){ alert('Selecciona al menos un miembro.'); return; }
+                newChat.name = groupName;
+                newChat.participants = [currentUser, ...selectedMembers];
+            }
+
+            if(chatType==='private'){
+                const existing = chats.find(chat => chat.type==='private' && chat.participants.includes(currentUser) && chat.participants.includes(newChat.participants.find(p=>p!==currentUser)));
+                if(existing){ hideNewChatModal(); openChat(existing.id); return; }
+            }
+
+            newChat.participants.forEach(p => newChat.unread[p] = 0);
+
+            chats.push(newChat);
+            localStorage.setItem('chats', JSON.stringify(chats));
+            hideNewChatModal();
+            loadChatList();
+            openChat(newChat.id);
+        }
+
+        function openChat(chatId){
+            activeChat = chats.find(c=>c.id===chatId);
+            if(!activeChat) return;
+
+            if(activeChat.unread) activeChat.unread[currentUser] = 0;
+            localStorage.setItem('chats', JSON.stringify(chats));
+
+            const chatHeader = document.getElementById('chatHeader');
+            const messageDisplay = document.getElementById('messageDisplay');
+            const messageInputArea = document.getElementById('messageInputArea');
+
+            const chatName = activeChat.type === 'private'
+                ? users[activeChat.participants.find(p => p !== currentUser)]?.name || activeChat.participants.find(p => p !== currentUser)
+                : activeChat.name;
+
+            chatHeader.innerHTML = `<div>
+                                        <h3>${escapeHtml(chatName)}</h3>
+                                        <p>${activeChat.participants.length>2 ? activeChat.participants.length + ' miembros' : ''}</p>
+                                    </div>`;
+            messageInputArea.style.display = 'flex';
+
+            renderMessages();
+            loadChatList();
+            setTimeout(()=>document.getElementById('messageText').focus(),200);
+        }
+
+        function renderMessages(){
+            const messageDisplay = document.getElementById('messageDisplay');
+            messageDisplay.innerHTML = '';
+
+            if(!activeChat || !activeChat.messages || activeChat.messages.length===0){
+                messageDisplay.innerHTML = '<p class="no-messages" style="color:var(--muted)">No hay mensajes en este chat.</p>'; return;
+            }
+
+            activeChat.messages.forEach(msg=>{
+                const el = document.createElement('div');
+                el.className = `message ${msg.sender===currentUser ? 'sent' : 'received'}`;
+                el.innerHTML = `<span class="sender-name">${msg.sender===currentUser ? 'Tú' : escapeHtml(users[msg.sender]?.name || msg.sender)}</span>
+                                <p>${escapeHtml(msg.text)}</p>
+                                <span class="message-time">${niceTime(msg.timestamp)}</span>`;
+                messageDisplay.appendChild(el);
+            });
+
+            messageDisplay.scrollTop = messageDisplay.scrollHeight;
+        }
+
+        function sendMessage(){
+            const textarea = document.getElementById('messageText');
+            const text = textarea.value.trim();
+            if(!text || !activeChat) return;
+
+            const newMessage = { sender: currentUser, text, timestamp: new Date().toISOString() };
+            activeChat.messages.push(newMessage);
+
+            activeChat.participants.forEach(p => {
+                if(p !== currentUser){
+                    activeChat.unread = activeChat.unread || {};
+                    activeChat.unread[p] = (activeChat.unread[p] || 0) + 1;
+                }
+            });
+
+            localStorage.setItem('chats', JSON.stringify(chats));
+            textarea.value = '';
+            renderMessages();
+            loadChatList();
+        }
+
+        function filterChats(){
+            const q = document.getElementById('chatSearch').value.trim();
+            loadChatList(q);
+        }
+
+        // Small helper to seed sample users (only for demo when no users exist)
+        (function seedDemo(){
+            if(Object.keys(users).length === 0){
+                const demo = {
+                    'alice': {name:'Alice Johnson'},
+                    'carlos': {name:'Carlos Méndez'},
+                    'sofia': {name:'Sofía R.'},
+                    'martin': {name:'Martín G.'}
+                };
+                localStorage.setItem('users', JSON.stringify(demo));
+                if(!currentUser){
+                    localStorage.setItem('currentUser','alice');
+                }
+            }
+        })();
+
+    </script>
+</body>
+</html>

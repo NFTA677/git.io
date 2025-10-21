@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+ <meta charset="UTF-8">
+ <title>Mi Dashboard </title>
+ <link rel="stylesheet" href="css\dashboard.css">
+ <script src="https://accounts.google.com/gsi/client" async defer></script>
+ <script src="https://apis.google.com/js/api.js"></script>
+</head>
+<body>
+  <img src="assets/VIMOD_LOGO-removebg-preview.png" class="logo-top-right" alt="Logo">
+  <div class="main-layout">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="hamburger" onclick="toggleSidebarMenu()">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <div class="sidebar-menu" id="sidebarMenu">
+        <ul>
+          <li onclick="openConfig()">Configuraciones</li>
+          <li onclick="openCalendar()">Calendario</li>
+ <li onclick="openMessages()">Mensajes</li>
+          <li onclick="openDrive()">Google Drive</li>
+ <li onclick="openCatalog()">Catálogo</li>
+ <li onclick="openTools()">Herramientas</li>
+          <li onclick="openGoogleLogin()">Iniciar Sesión con Google</li>
+          <li onclick="logout()">Cerrar Sesión</li>
+
+        </ul>
+        <div style="padding: 16px; border-top: 1px solid #444; color: #ccc; font-size: 14px;">
+          Usuario: <span id="currentUserDisplay" data-user-name="">Cargando...</span>
+        </div>
+      </div>
+    </div>
+    <!-- Main Content -->
+    <div class="content">
+      <div class="center-section">
+        <div class="calendar-container">
+          <h2>Calendario</h2>
+            <iframe src="https://calendar.google.com/calendar/embed?src=es.pe%23holiday%40group.v.calendar.google.com&ctz=America%2FLima" style="border: 0" frameborder="0" scrolling="no"></iframe>
+        </div>
+        <div class="activities-container">
+          <div class="activities-header">
+            <h2>Actividades</h2>
+            <button class="add-event-btn" onclick="showEventForm()">Añadir evento</button>
+          </div>
+          <form class="event-form" id="eventForm" onsubmit="addEvent(event)">
+            <input type="date" id="eventDate" required>
+            <input type="text" id="eventName" placeholder="Actividad" required>
+            <select id="eventCategory" required>
+              <option value="">Selecciona una categoría</option>
+              <option value="work">Trabajo</option>
+              <option value="personal">Personal</option>
+              <option value="meeting">Reunión</option>
+              <option value="deadline">Entrega</option>
+              <option value="social">Social</option>
+              <option value="health">Salud</option>
+              <option value="travel">Viaje</option>
+              <option value="education">Educación</option>
+            </select>
+            <select id="eventStatus" required>
+              <option value="Pendiente">Pendiente</option>
+              <option value="Completado">Completado</option>
+              <option value="Programado">Programado</option>
+            </select>
+            <select id="eventImportance" required>
+              <option value="Alta">Alta</option>
+              <option value="Media">Media</option>
+              <option value="Baja">Baja</option>
+            </select>
+            <textarea id="eventDescription" placeholder="Descripción (opcional)" rows="2"></textarea>
+            <div class="share-options">
+              <label>
+                <input type="checkbox" id="shareEvent"> 
+                Compartir este evento con otros usuarios
+              </label>
+              <div id="shareUsers" style="display: none;">
+                <label>Usuarios a compartir:</label>
+                <div id="userCheckboxes"></div>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="save-btn">Guardar</button>
+              <button type="button" class="cancel-btn" onclick="hideEventForm()">Cancelar</button>
+            </div>
+          </form>
+          <table class="events-table" id="eventsTable">
+            <thead>
+              <tr>
+                <th>Categoría</th>
+                <th>Fecha</th>
+                <th>Actividad</th>
+                <th>Estado</th>
+                <th>Importancia</th>
+                <th>Compartido</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="eventsTbody">
+              <!-- Eventos dinámicos aquí -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Right Section: Google Services -->
+      <div class="right-section">
+        <div class="google-service">
+          <div class="service-header">
+            <h2>Gmail</h2>
+            <button class="service-btn" onclick="refreshGmail()">🔄 Actualizar</button>
+          </div>
+          <div class="service-content">
+            <iframe id="gmailFrame" src="https://gmail.googleapis.com/$discovery/rest?version=v1" frameborder="0"></iframe>
+          </div>
+        </div>
+        
+        <div class="google-service">
+          <div class="service-header">
+            <h2>Google Drive</h2>
+            <button class="service-btn" onclick="refreshDrive()">🔄 Actualizar</button>
+          </div>
+          <div class="service-content">
+            <iframe id="driveFrame" src="" frameborder="0"></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    // Verificar si se está viendo como administrador
+    const viewingUser = localStorage.getItem('viewingUser');
+    const currentUser = localStorage.getItem('currentUser');
+    const actualUser = viewingUser || currentUser;
+    
+    function toggleSidebarMenu() {
+      document.getElementById('sidebarMenu').classList.toggle('active');
+    }
+    function openConfig() {
+      window.location.href = 'configuracion.html';
+    }
+    function openCalendar() {
+      window.open('https://calendar.google.com/calendar/', '_blank');
+    }
+    function openDrive() {
+      window.open('https://drive.google.com/', '_blank');
+    }
+    function openMessages() {
+      window.location.href = 'mensajes.html';
+    }
+    function openCatalog() {
+      window.location.href = 'catalogo.html';
+ }
+    function openTools() {
+      window.location.href = 'heramientas.html';
+    }
+    function openGoogleLogin() {
+      // Abrir Google Sign-In
+ google.accounts.id.prompt();
+    }
+
+    function logout() {
+      localStorage.removeItem('currentUser');
+      window.location.href = 'index.html';
+    }
+    
+    // Funciones para widgets de Google
+    function refreshGmail() {
+      const gmailFrame = document.getElementById('gmailFrame');
+      gmailFrame.src = gmailFrame.src;
+    }
+    
+    function refreshDrive() {
+      const driveFrame = document.getElementById('driveFrame');
+      const folderId = localStorage.getItem('driveFolderId');
+      driveFrame.src = folderId
+        ? `https://drive.google.com/embeddedfolderview?id=${folderId}#grid`
+        : 'https://drive.google.com/drive/u/0/';
+    }
+    
+    function refreshCalendar() {
+      const calendarFrame = document.getElementById('calendarFrame');
+      calendarFrame.src = calendarFrame.src;
+    }
+
+    // Sistema de eventos mejorado
+    let events = JSON.parse(localStorage.getItem('userEvents')) || [];
+    let sharedEvents = JSON.parse(localStorage.getItem('sharedEvents')) || [];
+    
+    // Categorías de eventos
+    const eventCategories = {
+      'work': { name: 'Trabajo', color: '#e81123', icon: '' },
+      'personal': { name: 'Personal', color: '#107c10', icon: '' },
+      'meeting': { name: 'Reunión', color: '#0078d4', icon: '' },
+      'deadline': { name: 'Entrega', color: '#ffb900', icon: '' },
+      'social': { name: 'Social', color: '#b4009e', icon: '' },
+      'health': { name: 'Salud', color: '#00bcf2', icon: '' },
+      'travel': { name: 'Viaje', color: '#8764b8', icon: '' },
+      'education': { name: 'Educación', color: '#107c10', icon: '' }
+    };
+
+    function showEventForm() {
+      document.getElementById('eventForm').style.display = 'flex';
+      loadUserCheckboxes();
+      
+      // Mostrar/ocultar opciones de compartir
+      document.getElementById('shareEvent').addEventListener('change', function() {
+        const shareUsers = document.getElementById('shareUsers');
+        shareUsers.style.display = this.checked ? 'block' : 'none';
+      });
+    }
+    
+    function hideEventForm() {
+      document.getElementById('eventForm').reset();
+      document.getElementById('eventForm').style.display = 'none';
+      document.getElementById('shareUsers').style.display = 'none';
+    }
+
+    function loadUserCheckboxes() {
+      const users = JSON.parse(localStorage.getItem('users')) || {};
+      const currentUser = localStorage.getItem('currentUser');
+      const userCheckboxes = document.getElementById('userCheckboxes');
+      
+      userCheckboxes.innerHTML = '';
+      
+      Object.keys(users).forEach(username => {
+        if (username !== currentUser) {
+          const label = document.createElement('label');
+          label.style.display = 'block';
+          label.style.marginBottom = '5px';
+          label.innerHTML = `
+            <input type="checkbox" value="${username}" style="margin-right: 8px;">
+            ${users[username].name || username}
+          `;
+          userCheckboxes.appendChild(label);
+        }
+      });
+    }
+
+    function addEvent(e) {
+      e.preventDefault();
+      const currentUser = localStorage.getItem('currentUser');
+      const users = JSON.parse(localStorage.getItem('users')) || {};
+      
+      const date = document.getElementById('eventDate').value;
+      const name = document.getElementById('eventName').value;
+      const category = document.getElementById('eventCategory').value;
+      const status = document.getElementById('eventStatus').value;
+      const importance = document.getElementById('eventImportance').value;
+      const description = document.getElementById('eventDescription').value;
+      const shareEvent = document.getElementById('shareEvent').checked;
+      
+      const newEvent = {
+        id: Date.now(),
+        date,
+        name,
+        category,
+        status,
+        importance,
+        description,
+        createdBy: currentUser,
+        createdAt: new Date().toISOString(),
+        shared: shareEvent
+      };
+      
+      events.push(newEvent);
+      localStorage.setItem('userEvents', JSON.stringify(events));
+      
+      // Si se va a compartir, agregar a eventos compartidos
+      if (shareEvent) {
+        const selectedUsers = Array.from(document.querySelectorAll('#userCheckboxes input[type="checkbox"]:checked'))
+          .map(checkbox => checkbox.value);
+        
+        selectedUsers.forEach(username => {
+          const sharedEvent = {
+            ...newEvent,
+            sharedWith: username,
+            sharedBy: currentUser
+          };
+          sharedEvents.push(sharedEvent);
+          
+          // Agregar a la lista de eventos compartidos del usuario
+          if (!users[username].sharedEvents) {
+            users[username].sharedEvents = [];
+          }
+          users[username].sharedEvents.push(newEvent);
+        });
+        
+        localStorage.setItem('sharedEvents', JSON.stringify(sharedEvents));
+        localStorage.setItem('users', JSON.stringify(users));
+      }
+      
+      hideEventForm();
+      renderEvents();
+    }
+
+    function deleteEvent(idx) {
+      if (confirm('¿Eliminar este evento?')) {
+        events.splice(idx, 1);
+        renderEvents();
+      }
+    }
+
+    function importanceOrder(imp) {
+      if (imp === 'Alta') return 1;
+      if (imp === 'Media') return 2;
+      return 3;
+    }
+
+    function renderEvents() {
+      const currentUser = localStorage.getItem('currentUser');
+      const users = JSON.parse(localStorage.getItem('users')) || {};
+      
+      // Combinar eventos propios y compartidos
+      const userSharedEvents = users[currentUser]?.sharedEvents || [];
+      const allEvents = [...events, ...userSharedEvents];
+      
+      // Ordenar por importancia (Alta, Media, Baja)
+      allEvents.sort((a, b) => importanceOrder(a.importance) - importanceOrder(b.importance));
+      
+      const tbody = document.getElementById('eventsTbody');
+      tbody.innerHTML = '';
+      
+      allEvents.forEach((ev, idx) => {
+        const tr = document.createElement('tr');
+        tr.className = 'event-row';
+        
+        const category = eventCategories[ev.category] || { name: 'Sin categoría', icon: '📝', color: '#666' };
+        const isShared = ev.shared || ev.sharedBy !== currentUser;
+        const sharedInfo = isShared ? (ev.sharedBy === currentUser ? 'Compartido' : `Por: ${ev.sharedBy}`) : 'Privado';
+        
+        tr.innerHTML = `
+          <td>
+            <span class="event-category" style="background:${category.color}; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; display: flex; align-items: center; gap: 4px;">
+              ${category.icon} ${category.name}
+            </span>
+          </td>
+          <td>${ev.date}</td>
+          <td>
+            <div>
+              <strong>${ev.name}</strong>
+              ${ev.description ? `<br><small style="color: #666;">${ev.description}</small>` : ''}
+            </div>
+          </td>
+          <td><span class="chip chip--status-${ev.status}">${ev.status}</span></td>
+          <td><span class="chip chip--importance-${ev.importance}">${ev.importance}</span></td>
+          <td>
+            <span class="chip" style="background: ${isShared ? '#e3f2fd' : '#f5f5f5'}; color: ${isShared ? '#1976d2' : '#666'};">
+              ${isShared ? '🔗' : '🔒'} ${sharedInfo}
+            </span>
+          </td>
+          <td>
+            ${ev.createdBy === currentUser ? `<button class="delete-btn" onclick="deleteEvent(${idx})">Eliminar</button>` : ''}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Inicializar
+    renderEvents();
+    
+    // Aplicar configuraciones cuando se carga la página
+    window.addEventListener('load', () => {
+      if (typeof refreshDashboardConfig === 'function') {
+        refreshDashboardConfig();
+      }
+      // Inicializar widget de Google Drive
+      try {
+        const driveFrame = document.getElementById('driveFrame');
+        if (driveFrame) {
+          const folderId = localStorage.getItem('driveFolderId');
+          // Si se define un folder público en localStorage, usamos la vista embebida.
+          // De lo contrario, abrimos la vista general de Drive del usuario.
+          driveFrame.src = folderId
+            ? `https://drive.google.com/embeddedfolderview?id=${folderId}#grid`
+            : 'https://drive.google.com/drive/u/0/';
+        }
+      } catch (err) {
+        console.error('No se pudo inicializar Google Drive:', err);
+      }
+      
+      // Si se está viendo como administrador, mostrar indicador
+      if (viewingUser) {
+        const header = document.createElement('div');
+        header.style.cssText = `
+          position: fixed; top: 0; left: 0; right: 0; background: #dc3545;
+          color: white; padding: 10px; text-align: center; z-index: 1000;
+          font-weight: bold; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        `;
+        // Ajustar margen superior del contenido
+        document.querySelector('.main-layout').style.marginTop = '50px';
+        header.textContent = 'Viendo como administrador';
+        document.body.appendChild(header);
+      }
+    });
+  </script>
+  <script src="js/config.js"></script>
+</body>
+
+</html>

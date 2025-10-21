@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Panel de Administración | NFTA-CORP</title>
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <img src="assets/VIMOD_LOGO-removebg-preview.png" class="logo-top-right" alt="Logo">
+
+  <div class="main-layout">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="hamburger" onclick="toggleSidebarMenu()">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <div class="sidebar-menu" id="sidebarMenu">
+        <ul>
+          <li onclick="showDashboard()">📊 Dashboard</li>
+          <li onclick="showUsers()">👥 Gestión de Usuarios</li>
+          <li onclick="showUserDashboards()">🖥️ Dashboards de Usuarios</li>
+          <li onclick="logout()">🚪 Cerrar Sesión</li>
+        </ul>
+        <div style="padding: 16px; border-top: 1px solid rgba(255,255,255,0.1); color: #ccc; font-size: 12px;">
+          Admin: <span id="adminUserDisplay">Administrador</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+      <div class="center-section">
+        <!-- Dashboard Panel -->
+        <div id="dashboardPanel" class="admin-panel">
+          <h2>
+            <div class="panel-icon">📊</div>
+            Dashboard Administrativo
+          </h2>
+
+          <div class="admin-stats">
+            <div class="stat-item">
+              <div class="stat-number" id="totalUsers">0</div>
+              <div class="stat-label">Usuarios</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number" id="activeUsers">0</div>
+              <div class="stat-label">Activos</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number" id="totalEvents">0</div>
+              <div class="stat-label">Eventos</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number" id="systemStatus">100%</div>
+              <div class="stat-label">Sistema</div>
+            </div>
+          </div>
+
+          <div class="admin-grid">
+            <div class="admin-card">
+              <button onclick="showUsers()"><h3>👥 Gestión de Usuarios</h3></button>
+              <p>Administra usuarios, permisos y accesos al sistema</p>
+            </div>
+            <div class="admin-card">
+              <!-- espacio para futuras tarjetas -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Users Management Panel -->
+        <div id="usersPanel" class="admin-panel" style="display: none;">
+          <h2>
+            <div class="panel-icon">👥</div>
+            Gestión de Usuarios
+          </h2>
+          <div id="usersContent">
+            <!-- Contenido de gestión de usuarios se cargará aquí -->
+          </div>
+        </div>
+
+        <!-- System Panel -->
+        <div id="systemPanel" class="admin-panel" style="display: none;">
+          <h2>
+            <div class="panel-icon">⚙️</div>
+            Configuración del Sistema
+          </h2>
+          <div id="systemContent">
+            <!-- Contenido de configuración del sistema se cargará aquí -->
+          </div>
+        </div>
+
+        <!-- Reports Panel -->
+        <div id="reportsPanel" class="admin-panel" style="display: none;">
+          <h2>
+            <div class="panel-icon">📈</div>
+            Reportes y Estadísticas
+          </h2>
+          <div id="reportsContent">
+            <!-- Contenido de reportes se cargará aquí -->
+          </div>
+        </div>
+
+        <!-- User Dashboards Panel -->
+        <div id="userDashboardsPanel" class="admin-panel" style="display: none;">
+          <h2>
+            <div class="panel-icon">🖥️</div>
+            Dashboards de Usuarios
+          </h2>
+          <div id="userDashboardsContent">
+            <!-- Contenido de dashboards de usuarios se cargará aquí -->
+          </div>
+        </div>
+
+        <!-- Settings Panel -->
+        <div id="settingsPanel" class="admin-panel" style="display: none;">
+          <h2>
+            <div class="panel-icon">🔧</div>
+            Configuraciones Avanzadas
+          </h2>
+          <div id="settingsContent">
+            <!-- Contenido de configuraciones se cargará aquí -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Variables globales
+    let currentPanel = 'dashboard';
+    let users = JSON.parse(localStorage.getItem('users')) || {};
+
+    // Inicialización
+    document.addEventListener('DOMContentLoaded', function() {
+      loadAdminStats();
+      updateAdminDisplay();
+    });
+
+    // Navegación del sidebar
+    function toggleSidebarMenu() {
+      document.getElementById('sidebarMenu').classList.toggle('active');
+    }
+
+    function showDashboard() { showPanel('dashboard'); }
+    function showUsers() { showPanel('users'); loadUsersManagement(); }
+    function showUserDashboards() { showPanel('userDashboards'); loadUserDashboards(); }
+    function showSystem() { showPanel('system'); loadSystemSettings(); }
+    function showReports() { showPanel('reports'); loadReports(); }
+    function showSettings() { showPanel('settings'); loadAdvancedSettings(); }
+
+    function logout() {
+      if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
+        localStorage.removeItem('currentUser');
+        window.location.href = 'index.html';
+      }
+    }
+
+    // Mostrar panel específico (con comprobación de existencia)
+    function showPanel(panelName) {
+      const panels = ['dashboard', 'users', 'userDashboards', 'system', 'reports', 'settings'];
+      panels.forEach(panel => {
+        const el = document.getElementById(panel + 'Panel');
+        if (el) el.style.display = 'none';
+      });
+
+      const target = document.getElementById(panelName + 'Panel');
+      if (target) {
+        target.style.display = 'block';
+        currentPanel = panelName;
+      }
+
+      document.getElementById('sidebarMenu').classList.remove('active');
+    }
+
+    // Cargar estadísticas del dashboard
+    function loadAdminStats() {
+      const totalUsers = Object.keys(users).length;
+      const activeUsers = totalUsers; // placeholder
+      const totalEvents = 0;
+      const systemStatus = '100%';
+
+      document.getElementById('totalUsers').textContent = totalUsers;
+      document.getElementById('activeUsers').textContent = activeUsers;
+      document.getElementById('totalEvents').textContent = totalEvents;
+      document.getElementById('systemStatus').textContent = systemStatus;
+    }
+
+    // Actualizar display del administrador
+    function updateAdminDisplay() {
+      const currentUser = localStorage.getItem('currentUser');
+      if (currentUser && users[currentUser]) {
+        document.getElementById('adminUserDisplay').textContent = users[currentUser].name || currentUser;
+      }
+    }
+
+    // Gestión de usuarios
+    function loadUsersManagement() {
+      const usersContent = document.getElementById('usersContent');
+      usersContent.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h3>Lista de Usuarios</h3>
+          <button onclick="addNewUser()" style="background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">
+            ➕ Agregar Usuario
+          </button>
+        </div>
+        <div style="background: #f8f9fa; border-radius: 12px; padding: 20px;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background: #e9ecef;">
+                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Usuario</th>
+                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Nombre</th>
+                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Tipo</th>
+                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Estado</th>
+                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${Object.keys(users).map(username => {
+                const user = users[username];
+                const isAdmin = username === 'admin';
+                return `
+                  <tr style="border-bottom: 1px solid #dee2e6;">
+                    <td style="padding: 12px;">${username}</td>
+                    <td style="padding: 12px;">${user.name || 'Sin nombre'}</td>
+                    <td style="padding: 12px;">
+                      <span style="background: ${isAdmin ? '#dc3545' : '#28a745'}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">
+                        ${isAdmin ? 'Administrador' : 'Usuario'}
+                      </span>
+                    </td>
+                    <td style="padding: 12px;">
+                      <span style="background: #28a745; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">
+                        Activo
+                      </span>
+                    </td>
+                    <td style="padding: 12px;">
+                      <button onclick="editUser('${username}')" style="background: #ffc107; color: #212529; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-right: 5px;">
+                        ✏️ Editar
+                      </button>
+                      <button onclick="viewUserDashboard('${username}')" style="background: #17a2b8; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-right: 5px;">
+                        🖥️ Dashboard
+                      </button>
+                      ${!isAdmin ? `<button onclick="deleteUser('${username}')" style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">
+                        🗑️ Eliminar
+                      </button>` : ''}
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    // Gestión de dashboards de usuarios
+    function loadUserDashboards() {
+      const userDashboardsContent = document.getElementById('userDashboardsContent');
+      userDashboardsContent.innerHTML = `
+        <div style="margin-bottom: 20px;">
+          <h3>Vista de Dashboards de Usuarios</h3>
+          <p style="color: #7f8c8d; margin-bottom: 20px;">Selecciona un usuario para ver y gestionar su dashboard personalizado</p>
+        </div>
+        <div class="admin-grid">
+          ${Object.keys(users).map(username => {
+            const user = users[username];
+            const isAdmin = username === 'admin';
+            return `
+              <div class="admin-card" style="cursor: pointer;" onclick="viewUserDashboard('${username}')">
+                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                  <div style="width: 50px; height: 50px; background: ${user.color || '#181818'}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                    ${(user.name || username).charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <h3 style="margin: 0; color: #2c3e50;">${user.name || username}</h3>
+                    <p style="margin: 5px 0 0 0; color: #7f8c8d; font-size: 0.9rem;">@${username}</p>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                  <span style="background: ${isAdmin ? '#dc3545' : '#28a745'}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">
+                    ${isAdmin ? 'Administrador' : 'Usuario'}
+                  </span>
+                  <span style="background: #17a2b8; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">
+                    Dashboard Activo
+                  </span>
+                </div>
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #dee2e6;">
+                  <p style="margin: 0; color: #7f8c8d; font-size: 0.9rem;">
+                    Color del tema: <span style="color: ${user.color || '#181818'}; font-weight: bold;">${user.color || '#181818'}</span>
+                  </p>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
+    // Configuración del sistema
+    function loadSystemSettings() {
+      const systemContent = document.getElementById('systemContent');
+      systemContent.innerHTML = `
+        <div class="admin-grid">
+          <div class="admin-card">
+            <h3>🔧 Configuración General</h3>
+            <p>Configuración básica del sistema</p>
+            <button onclick="openGeneralSettings()" style="background: #667eea; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 10px;">
+              Configurar
+            </button>
+          </div>
+          <div class="admin-card">
+            <h3>🔒 Políticas de Seguridad</h3>
+            <p>Configurar políticas de contraseñas y acceso</p>
+            <button onclick="openSecuritySettings()" style="background: #667eea; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 10px;">
+              Configurar
+            </button>
+          </div>
+          <div class="admin-card">
+            <h3>📊 Respaldo y Restauración</h3>
+            <p>Gestionar respaldos del sistema</p>
+            <button onclick="openBackupSettings()" style="background: #667eea; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 10px;">
+              Gestionar
+            </button>
+          </div>
+          <div class="admin-card">
+            <h3>🌐 Configuración de Red</h3>
+            <p>Configurar parámetros de red y conectividad</p>
+            <button onclick="openNetworkSettings()" style="background: #667eea; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 10px;">
+              Configurar
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    // Reportes
+    function loadReports() {
+      const reportsContent = document.getElementById('reportsContent');
+      reportsContent.innerHTML = `
+        <div class="admin-grid">
+          <div class="admin-card">
+            <h3>📈 Reporte de Usuarios</h3>
+            <p>Estadísticas de actividad de usuarios</p>
+            <button onclick="generateUserReport()" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 10px;">
+              Generar Reporte
+            </button>
+          </div>
+          <div class="admin-card">
+            <h3>📊 Reporte del Sistema</h3>
+            <p>Métricas de rendimiento del sistema</p>
+            <button onclick="generateSystemReport()" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 10px;">
+              Generar Reporte
+            </button>
+          </div>
+          <div class="admin-card">
+            <h3>🔍 Logs de Actividad</h3>
+            <p>Registros de actividad del sistema</p>
+            <button onclick="viewActivityLogs()" style="background: #17a2b8; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 10px;">
+              Ver Logs
+            </button>
+          </div>
+          <div class="admin-card">
+            <h3>📋 Reporte de Seguridad</h3>
+            <p>Análisis de seguridad y accesos</p>
+            <button onclick="generateSecurityReport()" style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 10px;">
+              Generar Reporte
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    // Funciones de gestión de usuarios
+    function addNewUser() {
+      const username = prompt('Ingresa el nombre de usuario:');
+      if (username && !users[username]) {
+        const password = prompt('Ingresa la contraseña:');
+        const name = prompt('Ingresa el nombre completo:');
+        if (password) {
+          users[username] = { password, name: name || username, color: '#181818' };
+          localStorage.setItem('users', JSON.stringify(users));
+          loadUsersManagement();
+          loadAdminStats();
+          alert('Usuario creado exitosamente');
+        }
+      } else if (users[username]) {
+        alert('El usuario ya existe');
+      }
+    }
+
+    function editUser(username) {
+      const user = users[username];
+
+      const modal = document.createElement('div');
+      modal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5); display: flex; align-items: center;
+        justify-content: center; z-index: 1000;
+      `;
+
+      modal.innerHTML = `
+        <div style="background: white; padding: 30px; border-radius: 15px; width: 400px; max-width: 90vw;">
+          <h3 style="margin: 0 0 20px 0; color: #2c3e50;">Editar Usuario: ${username}</h3>
+          <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 5px; color: #2c3e50; font-weight: 500;">Nombre completo:</label>
+            <input type="text" id="editUserName" value="${user.name || username}"
+                   style="width: 100%; padding: 10px; border: 2px solid #e5e8ea; border-radius: 8px; font-size: 14px; box-sizing: border-box;">
+          </div>
+          <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 5px; color: #2c3e50; font-weight: 500;">Nueva contraseña:</label>
+            <input type="password" id="editUserPassword" placeholder="Dejar vacío para mantener la actual"
+                   style="width: 100%; padding: 10px; border: 2px solid #e5e8ea; border-radius: 8px; font-size: 14px; box-sizing: border-box;">
+          </div>
+          <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; color: #2c3e50; font-weight: 500;">Color del tema:</label>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <div class="color-option" data-color="#181818" style="width: 30px; height: 30px; border-radius: 50%; background: #181818; cursor: pointer; border: 3px solid transparent;"></div>
+              <div class="color-option" data-color="#2c3e50" style="width: 30px; height: 30px; border-radius: 50%; background: #2c3e50; cursor: pointer; border: 3px solid transparent;"></div>
+              <div class="color-option" data-color="#27ae60" style="width: 30px; height: 30px; border-radius: 50%; background: #27ae60; cursor: pointer; border: 3px solid transparent;"></div>
+              <div class="color-option" data-color="#e74c3c" style="width: 30px; height: 30px; border-radius: 50%; background: #e74c3c; cursor: pointer; border: 3px solid transparent;"></div>
+              <div class="color-option" data-color="#f39c12" style="width: 30px; height: 30px; border-radius: 50%; background: #f39c12; cursor: pointer; border: 3px solid transparent;"></div>
+              <div class="color-option" data-color="#9b59b6" style="width: 30px; height: 30px; border-radius: 50%; background: #9b59b6; cursor: pointer; border: 3px solid transparent;"></div>
+              <div class="color-option" data-color="#3498db" style="width: 30px; height: 30px; border-radius: 50%; background: #3498db; cursor: pointer; border: 3px solid transparent;"></div>
+              <div class="color-option" data-color="#1abc9c" style="width: 30px; height: 30px; border-radius: 50%; background: #1abc9c; cursor: pointer; border: 3px solid transparent;"></div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button id="cancelEditBtn" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">
+              Cancelar
+            </button>
+            <button id="saveEditBtn" style="background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">
+              Guardar Cambios
+            </button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+
+      // manejar selección de color de forma robusta
+      const currentColor = user.color || '#181818';
+      let selectedColor = currentColor;
+      const options = modal.querySelectorAll('.color-option');
+      options.forEach(option => {
+        if (option.dataset.color === currentColor) option.style.borderColor = '#2c3e50';
+        option.addEventListener('click', function() {
+          options.forEach(opt => opt.style.borderColor = 'transparent');
+          this.style.borderColor = '#2c3e50';
+          selectedColor = this.dataset.color;
+        });
+      });
+
+      // funciones del modal
+      function closeEditModal() {
+        if (modal && modal.parentNode) modal.parentNode.removeChild(modal);
+        document.getElementById('saveEditBtn')?.removeEventListener('click', onSave);
+        document.getElementById('cancelEditBtn')?.removeEventListener('click', closeEditModal);
+      }
+
+      function onSave() {
+        const newName = modal.querySelector('#editUserName').value.trim();
+        const newPassword = modal.querySelector('#editUserPassword').value;
+
+        if (!newName) {
+          alert('El nombre no puede estar vacío');
+          return;
+        }
+
+        users[username].name = newName;
+        if (newPassword) users[username].password = newPassword;
+        users[username].color = selectedColor;
+
+        localStorage.setItem('users', JSON.stringify(users));
+        loadUsersManagement();
+        loadUserDashboards();
+        updateAdminDisplay();
+        closeEditModal();
+        alert('Usuario actualizado exitosamente');
+      }
+
+      document.getElementById('saveEditBtn').addEventListener('click', onSave);
+      document.getElementById('cancelEditBtn').addEventListener('click', closeEditModal);
+    }
+
+    function viewUserDashboard(username) {
+      localStorage.setItem('viewingUser', username);
+      window.open('dashboard.html', '_blank', 'width=1200,height=800');
+      setTimeout(() => {
+        localStorage.removeItem('viewingUser');
+      }, 30000);
+    }
+
+    function deleteUser(username) {
+      if (confirm(`¿Estás seguro de eliminar al usuario ${username}?`)) {
+        delete users[username];
+        localStorage.setItem('users', JSON.stringify(users));
+        loadUsersManagement();
+        loadAdminStats();
+        alert('Usuario eliminado exitosamente');
+      }
+    }
+
+    // Funciones placeholder para configuraciones
+    function openGeneralSettings() { alert('Configuración general - Próximamente'); }
+    function openSecuritySettings() { alert('Configuración de seguridad - Próximamente'); }
+    function openBackupSettings() { alert('Configuración de respaldos - Próximamente'); }
+    function openNetworkSettings() { alert('Configuración de red - Próximamente'); }
+    function generateUserReport() { alert('Generando reporte de usuarios...'); }
+    function generateSystemReport() { alert('Generando reporte del sistema...'); }
+    function viewActivityLogs() { alert('Mostrando logs de actividad...'); }
+    function generateSecurityReport() { alert('Generando reporte de seguridad...'); }
+    function openCustomizationSettings() { alert('Configuración de personalización - Próximamente'); }
+    function openNotificationSettings() { alert('Configuración de notificaciones - Próximamente'); }
+    function openLocalizationSettings() { alert('Configuración de idioma - Próximamente'); }
+    function openPerformanceSettings() { alert('Configuración de rendimiento - Próximamente'); }
+    function loadAdvancedSettings() { /* placeholder */ }
+  </script>
+</body>
+</html>

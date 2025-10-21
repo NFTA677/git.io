@@ -1,0 +1,414 @@
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background:
+        radial-gradient(1200px 600px at 10% 0%, rgba(0, 0, 0, 0.1), transparent 60%),
+        linear-gradient(180deg, #000000 0%, #0e0e0eb0 100%);
+      color: #222;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        linear-gradient(0deg, rgba(255,255,255,0.4), rgba(255,255,255,0.4)),
+        url('assets/background.jpg') center/cover no-repeat;
+      opacity: 0.18;
+      filter: blur(2px);
+      z-index: -1;
+      pointer-events: none;
+    }
+    .main-layout {
+      display: flex;
+      min-height: 100vh;
+    }
+    .sidebar {
+      width: 70px;
+      background: #222;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 20px;
+      position: relative;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.08);
+    }
+    .hamburger {
+      cursor: pointer;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .hamburger span {
+      display: block;
+      width: 30px;
+      height: 4px;
+      background: #fff;
+      margin: 4px 0;
+      border-radius: 2px;
+    }
+    .sidebar-menu {
+      display: none;
+      position: absolute;
+      top: 60px;
+      left: 0;
+      background: #333;
+      width: 180px;
+      border-radius: 0 8px 8px 0;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+      z-index: 10;
+    }
+    .sidebar-menu.active {
+      display: block;
+    }
+    .sidebar-menu ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .sidebar-menu li {
+      padding: 16px;
+      border-bottom: 1px solid #444;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .sidebar-menu li:hover {
+      background: #444;
+    }
+    .content {
+      flex: 1;
+      display: flex;
+      flex-direction: row;
+      padding: 30px;
+      position: relative;
+      gap: 30px;
+      box-sizing: border-box;
+    }
+    .logo-top-right {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      width: 120px;
+      z-index: 20;
+    }
+    .center-section {
+      flex: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-start;
+      margin-top: 60px;
+      gap: 30px;
+      min-width: 0;
+    }
+    .calendar-container {
+      width: 100%;
+      background: rgba(255,255,255,0.85);
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      border: 1px solid rgba(0, 0, 0, 0.6);
+      padding: 24px;
+      margin-bottom: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-sizing: border-box;
+    }
+    .calendar-container h2,
+    .activities-container h2,
+    .right-section h2 {
+      margin: 0 0 12px 0;
+      font-size: 18px;
+      color: #000000;
+      letter-spacing: 0.3px;
+    }
+    .calendar-container iframe {
+      width: 100%;
+      max-width: 100%;
+      height: 300px;
+      border-radius: 10px;
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+    .activities-container {
+      width: 100%;
+      background: rgba(255,255,255,0.85);
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      border: 1px solid rgba(255,255,255,0.6);
+      padding: 24px;
+      margin-bottom: 0;
+      max-height: 320px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      box-sizing: border-box;
+    }
+    .activities-header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .activities-header h2 {
+      margin: 0;
+    }
+    .add-event-btn {
+      background: #000000;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-size: 15px;
+      transition: background 0.2s;
+    }
+    .add-event-btn:hover {
+      background: #000000;
+    }
+    .event-form {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      background: #f5f7fa;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+      width: 100%;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      box-sizing: border-box;
+    }
+    .event-form input, .event-form select, .event-form textarea {
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 15px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .share-options {
+      margin-top: 12px;
+      padding: 12px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      border: 1px solid #e9ecef;
+    }
+    .share-options label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .share-options input[type="checkbox"] {
+      width: auto;
+    }
+    #userCheckboxes {
+      margin-top: 8px;
+      padding: 8px;
+      background: white;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+    #userCheckboxes label {
+      margin-bottom: 4px;
+      font-size: 13px;
+    }
+    .event-form .form-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+    .event-form button {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 15px;
+    }
+    .event-form .save-btn {
+      background: #000000;
+      color: #fff;
+    }
+    .event-form .cancel-btn {
+      background: #5c5b5b;
+      color: #ffffff;
+    }
+    .events-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 15px;
+    }
+    .events-table th, .events-table td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    .events-table th {
+      background: #f5f7fb;
+      color: #2b3a55;
+      font-weight: 600;
+    }
+    .event-row {
+      transition: background 0.2s, transform 0.06s ease-out;
+    }
+    .event-row:hover {
+      background: #f7f9fc;
+      transform: translateY(-1px);
+    }
+    .event-color {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 8px;
+      border: 2px solid #eee;
+      vertical-align: middle;
+    }
+    .chip {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      border: 1px solid rgba(0,0,0,0.06);
+    }
+    .chip--status-Pendiente { background: #fff4e5; color: #8a5a12; }
+    .chip--status-Completado { background: #e7f6ed; color: #1e6a3b; }
+    .chip--status-Programado { background: #e7f0fb; color: #204e96; }
+    .chip--importance-Alta { background: #fde7eb; color: #8a1028; }
+    .chip--importance-Media { background: #fff6d6; color: #7a5d03; }
+    .chip--importance-Baja { background: #eef7ff; color: #184a7b; }
+    .delete-btn {
+      background: #e81123;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+    .delete-btn:hover {
+      background: #b50f1a;
+    }
+    .right-section {
+      flex: 1;
+      background: rgba(255,255,255,0.85);
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      border: 1px solid rgba(255,255,255,0.6);
+      padding: 24px;
+      margin-left: 0;
+      margin-top: 60px;
+      height: auto;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-sizing: border-box;
+    }
+    .google-service {
+      margin-bottom: 20px;
+      background: rgba(255,255,255,0.85);
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      border: 1px solid rgba(255,255,255,0.6);
+      overflow: hidden;
+    }
+    
+    .service-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      background:#000000;
+      color: rgb(201, 201, 201);
+    }
+    
+    .service-header h2 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    
+    .service-btn {
+      background: rgba(0, 0, 0, 0.2);
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background 0.2s;
+    }
+    
+    .service-btn:hover {
+      background: rgba(255,255,255,0.3);
+    }
+    
+    .service-content {
+      padding: 0;
+    }
+    
+    .service-content iframe {
+      width: 100%;
+      height: 300px;
+      border: none;
+      display: block;
+    }
+    
+    .right-section iframe {
+      width: 100%;
+      max-width: 100%;
+      height: 500px;
+      border-radius: 10px;
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+    @media (max-width: 1200px) {
+      .main-layout {
+        flex-direction: column;
+      }
+      .content {
+        flex-direction: column;
+        padding: 10px;
+        gap: 20px;
+      }
+      .center-section, .right-section, .calendar-container, .activities-container {
+        width: 100%;
+        margin-left: 0;
+        margin-top: 20px;
+      }
+      .right-section {
+        margin-top: 20px;
+      }
+    }
+    @media (max-width: 700px) {
+      .calendar-container iframe,
+      .right-section iframe {
+        max-width: 100%;
+        width: 100%;
+        height: 250px;
+      }
+      .activities-container {
+        max-height: 400px;
+      }
+    }

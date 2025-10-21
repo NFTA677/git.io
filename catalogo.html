@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catálogo | NFTA-CORP</title>
+  <link rel="stylesheet" href="css/catalogo.css">
+  <style>
+    .card {
+      position: relative;
+    }
+
+    .delete-button {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background-color: rgba(0, 0, 0, 0.5);
+      color: white;
+      border: none;
+      padding: 0.25rem 0.5rem;
+      cursor: pointer;
+      border-radius: 0.25rem;
+    }
+
+    /* Estilos mínimos para modal si no están en css externo */
+    .modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+    }
+    .modal-content {
+      background: #2c2c2c;
+      max-width: 600px;
+      width: 90%;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .image-preview img { display:block; max-width:100%; max-height:150px; }
+    .sr-only { position: absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; }
+  </style>
+</head>
+
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="brand">
+        <img src="assets/VIMOD_LOGO-removebg-preview.png" alt="NFTA-CORP" class="brand-logo">
+        <span class="brand-name">NFTA-CORP</span>
+      </a>
+      <nav class="nav">
+        <a href="dashboard.html">Panel</a>
+        <a href="catalogo.html" class="active">Catálogo</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <h1 class="page-title">Catálogo</h1>
+
+    <section class="toolbar" aria-label="Herramientas de catálogo">
+      <div class="search-group">
+        <input type="search" id="search" class="input" placeholder="Buscar productos..." aria-label="Buscar productos">
+      </div>
+      <div class="filters"></div>
+        <label class="sr-only" for="category">Categoría</label>
+        <select id="category" class="select">
+          <option value="">Todas las categorías</option>
+          <option value="hardware">Hardware</option>
+          <option value="software">Software</option>
+          <option value="servicios">Servicios</option>
+        </select>
+        <label class="sr-only" for="sort">Ordenar</label>
+        <select id="sort" class="select">
+          <option value="relevance">Relevancia</option>
+          <option value="price-asc">Precio: menor a mayor</option>
+          <option value="price-desc">Precio: mayor a menor</option>
+          <option value="newest">Novedades</option>
+        </select>
+        <button class="btn btn-primary" onclick="showAddProductModal()">➕ Agregar Producto</button>
+      </div>
+    </section>
+
+    <section id="catalog-grid" class="catalog-grid">
+      <!-- Aquí se insertan las tarjetas de producto -->
+    </section>
+  </main>
+
+  <!-- Modal para agregar producto -->
+  <div id="addProductModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Agregar Nuevo Producto</h2>
+        <button class="modal-close" onclick="hideAddProductModal()">&times;</button>
+      </div>
+      <form id="addProductForm" class="modal-body">
+        <div class="form-group">
+          <label for="productName">Nombre del Producto:</label>
+          <input type="text" id="productName" required>
+        </div>
+
+        <div class="form-group">
+          <label for="productDescription">Descripción:</label>
+          <textarea id="productDescription" rows="3"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="productCategory">Categoría:</label>
+          <select id="productCategory" required>
+            <option value="">Selecciona una categoría</option>
+            <option value="hardware">Hardware</option>
+            <option value="software">Software</option>
+            <option value="servicios">Servicios</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="productPrice">Precio (opcional):</label>
+          <input type="number" id="productPrice" step="0.01" min="0">
+        </div>
+
+        <div class="form-group">
+          <label for="productImage">Imagen del Producto:</label>
+          <div class="image-upload-container">
+            <input type="file" id="productImage" accept="image/*" onchange="previewImage(event)">
+            <div class="image-preview" id="imagePreview">
+              <div class="upload-placeholder">
+                <span>📷</span>
+                <p>Haz clic para seleccionar una imagen</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="hideAddProductModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Agregar Producto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>© <span id="year"></span> NFTA-CORP. Todos los derechos reservados.</p>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Recuperar catálogo desde localStorage
+    let catalogProducts = [];
+    try {
+      catalogProducts = JSON.parse(localStorage.getItem('catalogProducts')) || [];
+    } catch (e) {
+      catalogProducts = [];
+    }
+    // Guardar (asegura que exista la clave)
+    localStorage.setItem('catalogProducts', JSON.stringify(catalogProducts));
+
+    // Mostrar modal para agregar producto
+    function showAddProductModal() {
+      const currentUser = localStorage.getItem('currentUser');
+      if (!currentUser) {
+        alert('Debes iniciar sesión para agregar productos');
+        return;
+      }
+      document.getElementById('addProductModal').style.display = 'flex';
+    }
+
+    // Ocultar modal
+    function hideAddProductModal() {
+      document.getElementById('addProductModal').style.display = 'none';
+      document.getElementById('addProductForm').reset();
+      document.getElementById('imagePreview').innerHTML = `
+        <div class="upload-placeholder">
+          <span>📷</span>
+          <p>Haz clic para seleccionar una imagen</p>
+        </div>
+      `;
+    }
+
+    // Leer archivo como DataURL (para almacenar persistente en localStorage)
+    function readFileAsDataURL(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // Vista previa de imagen (usa FileReader para mostrar DataURL)
+    function previewImage(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          document.getElementById('imagePreview').innerHTML = `<img src="${e.target.result}" alt="Vista previa">`;
+        };
+        reader.readAsDataURL(file);
+      } else {
+        document.getElementById('imagePreview').innerHTML = `
+          <div class="upload-placeholder">
+            <span>📷</span>
+            <p>Haz clic para seleccionar una imagen</p>
+          </div>
+        `;
+      }
+    }
+
+    // Manejar envío del formulario (async para leer la imagen)
+    document.getElementById('addProductForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      const currentUser = localStorage.getItem('currentUser') || 'Desconocido';
+      const name = (document.getElementById('productName').value || '').trim();
+      const description = (document.getElementById('productDescription').value || '').trim();
+      const category = document.getElementById('productCategory').value;
+      const priceInput = document.getElementById('productPrice').value;
+      const price = priceInput === '' ? null : parseFloat(priceInput);
+      const imageFile = document.getElementById('productImage').files[0];
+
+      let imageUrl = 'assets/background.jpg'; // Imagen por defecto
+
+      if (imageFile) {
+        try {
+          imageUrl = await readFileAsDataURL(imageFile); // ahora se guarda como DataURL (persistente)
+        } catch (err) {
+          console.error('Error leyendo la imagen:', err);
+          imageUrl = 'assets/background.jpg';
+        }
+      }
+
+      // Crear nuevo producto
+      const newProduct = {
+        id: Date.now(),
+        name: name,
+        description: description,
+        category: category,
+        price: price,
+        image: imageUrl,
+        addedBy: currentUser,
+        addedDate: new Date().toISOString()
+      };
+
+      // Agregar al catálogo
+      catalogProducts.push(newProduct);
+      localStorage.setItem('catalogProducts', JSON.stringify(catalogProducts));
+
+      // Actualizar la vista
+      renderCatalog();
+
+      // Cerrar modal
+      hideAddProductModal();
+
+      alert('Producto agregado exitosamente');
+    });
+
+    // Eliminar producto
+    function deleteProduct(productId) {
+      if (!confirm('¿Eliminar este producto?')) return;
+      catalogProducts = catalogProducts.filter(product => product.id !== productId);
+      localStorage.setItem('catalogProducts', JSON.stringify(catalogProducts));
+      renderCatalog();
+    }
+
+    // Renderizar catálogo completo
+    function renderCatalog() {
+      const grid = document.getElementById('catalog-grid');
+      grid.innerHTML = '';
+
+      catalogProducts.forEach(product => {
+        const card = document.createElement('article');
+        card.className = 'card';
+        card.innerHTML = `
+          <button class="delete-button" onclick="deleteProduct(${product.id})">Eliminar</button>
+          <div class="card-media" style="background-image:url('${product.image}'); min-height:140px; background-size:cover; background-position:center;"></div>
+          <div class="card-body">
+            <h2 class="card-title">${product.name || ''}</h2>
+            <p class="card-meta">Categoría: ${product.category || ''}</p>
+            <p class="card-description">${product.description || ''}</p>
+            <p class="card-author">Agregado por: ${product.addedBy || ''}</p>
+            <div class="card-footer">
+              <span class="price">$${product.price != null ? product.price.toFixed(2) : 'Consultar'}</span>
+              <button class="btn">Agregar</button>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    // Filtrar productos
+    function filterProducts() {
+      const search = (document.getElementById('search').value || '').toLowerCase();
+      const category = document.getElementById('category').value;
+      const sort = document.getElementById('sort').value;
+
+      let filteredProducts = catalogProducts.filter(product => {
+        const name = (product.name || '').toLowerCase();
+        const desc = (product.description || '').toLowerCase();
+        const matchesSearch = name.includes(search) || desc.includes(search);
+        const matchesCategory = !category || product.category === category;
+        return matchesSearch && matchesCategory;
+      });
+
+      // Ordenar productos
+      switch (sort) {
+        case 'price-asc':
+          filteredProducts.sort((a, b) => (a.price != null ? a.price : Infinity) - (b.price != null ? b.price : Infinity));
+          break;
+        case 'price-desc':
+          filteredProducts.sort((a, b) => (b.price != null ? b.price : -Infinity) - (a.price != null ? a.price : -Infinity));
+          break;
+        case 'newest':
+          filteredProducts.sort((a, b) => new Date(b.addedDate) - new Date(a.addedDate));
+          break;
+      }
+
+      // Renderizar productos filtrados
+      const grid = document.getElementById('catalog-grid');
+      grid.innerHTML = '';
+
+      filteredProducts.forEach(product => {
+        const card = document.createElement('article');
+        card.className = 'card';
+        card.innerHTML = `
+          <button class="delete-button" onclick="deleteProduct(${product.id})">Eliminar</button>
+          <div class="card-media" style="background-image:url('${product.image}'); min-height:140px; background-size:cover; background-position:center;"></div>
+          <div class="card-body">
+            <h2 class="card-title">${product.name || ''}</h2>
+            <p class="card-meta">Categoría: ${product.category || ''}</p>
+            <p class="card-description">${product.description || ''}</p>
+            <p class="card-author">Agregado por: ${product.addedBy || ''}</p>
+            <div class="card-footer">
+              <span class="price">$${product.price != null ? product.price.toFixed(2) : 'Consultar'}</span>
+              <button class="btn">Agregar</button>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    // Event listeners para filtros
+    document.getElementById('search').addEventListener('input', filterProducts);
+    document.getElementById('category').addEventListener('change', filterProducts);
+    document.getElementById('sort').addEventListener('change', filterProducts);
+
+    // Cerrar modal al hacer clic fuera
+    document.getElementById('addProductModal').addEventListener('click', function (e) {
+      if (e.target === this) {
+        hideAddProductModal();
+      }
+    });
+
+    // Inicializar catálogo
+    renderCatalog();
+  </script>
+</body>
+
+</html>
+goBackToDashboard() {
+      window.location.href = 'dashboard.html';
+    }
+    
+    // Inicializar al cargar la página
+    document.addEventListener('DOMContentLoaded', initializeConfig);
+  </script>
+  <script src="js/config.js"></script>
+</body>
+</html>

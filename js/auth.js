@@ -10,7 +10,7 @@ function safeParseJSON(str, fallback) {
 
 const defaultUsers = {
   admin: {
-    password: 'adminpass',
+    password: 'Li197189.13',
     name: 'Administrador',
     color: '#2c3e50',
     email: 'admin@nfta-corp.com',
@@ -22,7 +22,7 @@ const defaultUsers = {
   },
   user1: {
     password: '1234',
-    name: 'Marcelo del Valle',
+    name: 'Marcelo Valle',
     color: '#27ae60',
     email: 'marcelo@nfta-corp.com',
     role: 'user',
@@ -31,39 +31,17 @@ const defaultUsers = {
     events: [],
     sharedEvents: []
   },
-  user2: {
-    password: 'user2pass',
-    name: 'Usuario 2',
-    color: '#3498db',
-    email: 'user2@nfta-corp.com',
+   user2: {
+    password: '1234',
+    name: 'Franco valle',
+    color: '#27ae60',
+    email: 'marcelo@nfta-corp.com',
     role: 'user',
     googleConnected: false,
     lastLogin: null,
     events: [],
     sharedEvents: []
   },
-  user3: {
-    password: 'user3pass',
-    name: 'Usuario 3',
-    color: '#e74c3c',
-    email: 'user3@nfta-corp.com',
-    role: 'user',
-    googleConnected: false,
-    lastLogin: null,
-    events: [],
-    sharedEvents: []
-  },
-  user4: {
-    password: 'user4pass',
-    name: 'Usuario 4',
-    color: '#9b59b6',
-    email: 'user4@nfta-corp.com',
-    role: 'user',
-    googleConnected: false,
-    lastLogin: null,
-    events: [],
-    sharedEvents: []
-  }
 };
 
 let users = safeParseJSON(localStorage.getItem('users'), null) || defaultUsers;

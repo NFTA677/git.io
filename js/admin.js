@@ -11,78 +11,42 @@ document.addEventListener('DOMContentLoaded', () => {
         return new URLSearchParams(window.location.search).get(name);
     }
 
-    // API functions to interact with database
-    async function fetchUsers() {
-        try {
-            const response = await fetch('/api/users');
-            if (!response.ok) throw new Error('Failed to fetch users');
-            return await response.json();
-        } catch (error) {
-            console.error('Error fetching users:', error);
-            return {};
+    function readInitialData() {
+        if (typeof window.APP_DATA === 'object' && window.APP_DATA !== null) {
+            return window.APP_DATA;
         }
+        const el = document.getElementById('app-data');
+        if (el && el.type === 'application/json') {
+            try {
+                return JSON.parse(el.textContent);
+            } catch (e) {
+                console.warn('Invalid JSON in #app-data');
+            }
+        }
+        return {};
     }
 
-    async function getCurrentUser() {
-        try {
-            const response = await fetch('/api/current-user');
-            if (!response.ok) throw new Error('Failed to fetch current user');
-            const data = await response.json();
-            return data.username || null;
-        } catch (error) {
-            console.error('Error fetching current user:', error);
-            return getQueryParam('currentUser') || null;
-        }
-    }
+    const initialData = readInitialData();
 
-    async function updateUserSession(username) {
-        try {
-            await fetch('/api/user-session', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username })
-            });
-        } catch (error) {
-            console.error('Error updating user session:', error);
-        }
-    }
-
-    async function logout() {
-        try {
-            await fetch('/api/logout', { method: 'POST' });
-        } catch (error) {
-            console.error('Error during logout:', error);
-        }
-    }
-
-    // In-memory cache for performance
-    const cache = {
-        users: {},
-        currentUser: null,
-        lastFetch: 0
+    // In-memory store (no localStorage)
+    const store = {
+        users: initialData.users || {},
+        currentUser: initialData.currentUser || getQueryParam('currentUser') || null,
+        viewingUser: null
     };
 
-    async function getUsers() {
-        const now = Date.now();
-        // Refresh cache every 5 minutes
-        if (now - cache.lastFetch > 300000) {
-            cache.users = await fetchUsers();
-            cache.lastFetch = now;
-        }
-        return cache.users;
+    function getUsers() {
+        return store.users || {};
     }
 
-    async function getCurrentUsername() {
-        if (!cache.currentUser) {
-            cache.currentUser = await getCurrentUser();
-        }
-        return cache.currentUser;
+    function getCurrentUsername() {
+        return store.currentUser || null;
     }
 
-    async function initAdminPanel() {
+    function initAdminPanel() {
         setupEventListeners();
-        await loadUserData();
-        await displayAdminName();
+        loadUserData();
+        displayAdminName();
     }
 
     function setupEventListeners() {
@@ -102,32 +66,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function handleLogout() {
+    function handleLogout() {
         console.log('Logging out...');
-        await logout();
-        cache.currentUser = null;
-        cache.users = {};
+        store.currentUser = null;
+        store.viewingUser = null;
         window.location.href = 'index.html';
     }
 
-    async function loadUserData() {
-        const users = await getUsers();
+    function loadUserData() {
+        const users = getUsers();
         const userListContainer = document.getElementById('user-list');
         if (!userListContainer) return;
 
-        userListContainer.innerHTML = '<p>Cargando usuarios...</p>';
+        userListContainer.innerHTML = '';
 
-        const userCards = [];
         for (const username in users) {
             if (Object.prototype.hasOwnProperty.call(users, username)) {
                 const user = users[username] || {};
                 const userCard = createUserCard(username, user);
-                userCards.push(userCard);
+                userListContainer.appendChild(userCard);
             }
         }
-
-        userListContainer.innerHTML = '';
-        userCards.forEach(card => userListContainer.appendChild(card));
     }
 
     function createUserCard(username, user) {
@@ -154,20 +113,21 @@ document.addEventListener('DOMContentLoaded', () => {
         return card;
     }
 
-    async function viewUserDashboard(username) {
-        const users = await getUsers();
+    function viewUserDashboard(username) {
+        const users = getUsers();
         if (users[username]) {
-            await updateUserSession(username);
+            store.viewingUser = username;
+            // Pass selected user via query param to avoid localStorage
             window.location.href = `dashboard.html?user=${encodeURIComponent(username)}`;
         } else {
             alert('Usuario no encontrado.');
         }
     }
 
-    async function displayAdminName() {
-        const currentUser = await getCurrentUsername();
+    function displayAdminName() {
+        const currentUser = getCurrentUsername();
         if (!currentUser) return;
-        const users = await getUsers();
+        const users = getUsers();
         if (users[currentUser]) {
             const adminNameElement = document.getElementById('admin-name');
             if (adminNameElement) {

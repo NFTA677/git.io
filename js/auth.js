@@ -1,130 +1,73 @@
-// Sistema de usuarios con base de datos
-// Nota: Requiere un backend con API REST para manejar la base de datos
+// Sistema de usuarios mejorado (sin localStorage)
+// Nota: todo el estado se mantiene en memoria y se pierde al recargar la página.
 
-// Configuración de la API
-const API_BASE_URL = '/api'; // Ajustar según tu backend
+const defaultUsers = {
+  admin: {
+    password: 'Li197189.13',
+    name: 'Administrador',
+    color: '#2c3e50',
+    email: 'admin@nfta-corp.com',
+    role: 'admin',
+    googleConnected: false,
+    lastLogin: null,
+    events: [],
+    sharedEvents: []
+  },
+  user1: {
+    password: '1234',
+    name: 'Marcelo Valle',
+    color: '#27ae60',
+    email: 'marcelo@nfta-corp.com',
+    role: 'user',
+    googleConnected: false,
+    lastLogin: null,
+    events: [],
+    sharedEvents: []
+  },
+  user2: {
+    password: '1234',
+    name: 'Franko Valle',
+    color: '#3498db',
+    email: 'user2@nfta-corp.com',
+    role: 'user',
+    googleConnected: false,
+    lastLogin: null,
+    events: [],
+    sharedEvents: []
+  },
+  user3: {
+    password: 'user3pass',
+    name: 'Jan Carlo',
+    color: '#e74c3c',
+    email: 'user3@nfta-corp.com',
+    role: 'user',
+    googleConnected: false,
+    lastLogin: null,
+    events: [],
+    sharedEvents: []
+  },
+  
+};
 
-// Estado en memoria (cache local)
-let users = {};
+// Estado en memoria
+let users = (typeof structuredClone === 'function') ? structuredClone(defaultUsers) : JSON.parse(JSON.stringify(defaultUsers));
 let sharedEvents = [];
 let currentUser = null;
 let pendingGoogleConnectUser = null;
 
-// Funciones de API para comunicarse con la base de datos
-async function apiRequest(endpoint, options = {}) {
-  try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-      },
-      ...options
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error('API request failed:', error);
-    throw error;
-  }
-}
-
-// Cargar usuarios desde la base de datos
-async function loadUsersFromDB() {
-  try {
-    const data = await apiRequest('/users');
-    users = data.users || {};
-    return users;
-  } catch (error) {
-    console.error('Error cargando usuarios:', error);
-    // Fallback a usuarios por defecto si falla la conexión
-    users = {};
-    return users;
-  }
-}
-
-// Guardar usuario en la base de datos
-async function saveUserToDB(username, userData) {
-  try {
-    await apiRequest(`/users/${username}`, {
-      method: 'PUT',
-      body: JSON.stringify(userData)
-    });
-    users[username] = userData;
-    return true;
-  } catch (error) {
-    console.error('Error guardando usuario:', error);
-    return false;
-  }
-}
-
-// Crear nuevo usuario en la base de datos
-async function createUserInDB(username, userData) {
-  try {
-    await apiRequest('/users', {
-      method: 'POST',
-      body: JSON.stringify({ username, ...userData })
-    });
-    users[username] = userData;
-    return true;
-  } catch (error) {
-    console.error('Error creando usuario:', error);
-    return false;
-  }
-}
-
-// Cargar eventos compartidos desde la base de datos
-async function loadSharedEventsFromDB() {
-  try {
-    const data = await apiRequest('/events/shared');
-    sharedEvents = data.events || [];
-    return sharedEvents;
-  } catch (error) {
-    console.error('Error cargando eventos compartidos:', error);
-    sharedEvents = [];
-    return sharedEvents;
-  }
-}
-
-// Guardar eventos compartidos en la base de datos
-async function saveSharedEventsToDB(events) {
-  try {
-    await apiRequest('/events/shared', {
-      method: 'PUT',
-      body: JSON.stringify({ events })
-    });
-    sharedEvents = events;
-    return true;
-  } catch (error) {
-    console.error('Error guardando eventos compartidos:', error);
-    return false;
-  }
-}
-
 // Cargar usuarios disponibles dinámicamente
-async function loadAvailableUsers() {
+function loadAvailableUsers() {
   const userSelect = document.getElementById('userSelect');
   if (!userSelect) return;
-  
-  userSelect.innerHTML = '<option value="">Cargando usuarios...</option>';
-  
-  try {
-    await loadUsersFromDB();
-    userSelect.innerHTML = '<option value="">Selecciona tu usuario</option>';
+  userSelect.innerHTML = '<option value="">Selecciona tu usuario</option>';
 
-    Object.keys(users).sort().forEach(username => {
-      const user = users[username];
-      const option = document.createElement('option');
-      option.value = username;
-      option.textContent = `${user.name}${user.role === 'admin' ? ' (admin)' : ''}${user.googleConnected ? ' (Google)' : ''}`;
-      userSelect.appendChild(option);
-    });
-  } catch (error) {
-    userSelect.innerHTML = '<option value="">Error cargando usuarios</option>';
-  }
+  Object.keys(users).sort().forEach(username => {
+    const user = users[username];
+    const option = document.createElement('option');
+    option.value = username;
+    option.textContent = `${user.name}${user.role === 'admin' ? ' (admin)' : ''}${user.googleConnected ? ' (Google)' : ''}`;
+    userSelect.appendChild(option);
+  });
 }
 
 // Decodificar JWT (base64url)
@@ -151,11 +94,10 @@ function initializeGoogleAuth() {
   }
 }
 
-async function handleGoogleSignIn(response) {
+function handleGoogleSignIn(response) {
   try {
     const payload = parseJwt(response.credential);
     if (!payload) throw new Error('Token inválido');
-    
     const googleUser = {
       email: payload.email,
       name: payload.name,
@@ -170,29 +112,20 @@ async function handleGoogleSignIn(response) {
         pendingGoogleConnectUser = null;
         return;
       }
-      
-      // Verificar conflictos en la base de datos
+      // Conflicto si otro usuario ya tiene ese email
       const conflict = Object.keys(users).find(u => u !== pendingGoogleConnectUser && users[u].email === googleUser.email);
       if (conflict) {
         alert('Esa cuenta de Google ya está asociada a otro usuario.');
         pendingGoogleConnectUser = null;
         return;
       }
-      
       target.googleConnected = true;
       target.email = googleUser.email;
       target.picture = googleUser.picture || target.picture;
       target.lastLogin = new Date().toISOString();
-      
-      const saved = await saveUserToDB(pendingGoogleConnectUser, target);
       pendingGoogleConnectUser = null;
-      
-      if (saved) {
-        alert('Cuenta de Google conectada correctamente.');
-        loadAvailableUsers();
-      } else {
-        alert('Error al conectar la cuenta de Google.');
-      }
+      alert('Cuenta de Google conectada correctamente.');
+      loadAvailableUsers();
       return;
     }
 
@@ -202,25 +135,21 @@ async function handleGoogleSignIn(response) {
       users[existingUsername].googleConnected = true;
       users[existingUsername].lastLogin = new Date().toISOString();
       users[existingUsername].picture = googleUser.picture;
-      
-      await saveUserToDB(existingUsername, users[existingUsername]);
       currentUser = existingUsername;
-      
       if (users[existingUsername].role === 'admin') {
         window.location.href = 'admin.html';
       } else {
         window.location.href = 'dashboard.html';
       }
     } else {
-      // Crear nuevo usuario
+      // Crear nombre de usuario único basado en el email
       const base = (googleUser.email.split('@')[0] || 'user').replace(/[^a-z0-9_\-\.]/gi, '').toLowerCase() || 'user';
       let newUsername = base;
       let idx = 1;
       while (users[newUsername]) {
         newUsername = base + idx++;
       }
-      
-      const newUser = {
+      users[newUsername] = {
         password: '',
         name: googleUser.name,
         color: '#3498db',
@@ -232,14 +161,8 @@ async function handleGoogleSignIn(response) {
         events: [],
         sharedEvents: []
       };
-      
-      const created = await createUserInDB(newUsername, newUser);
-      if (created) {
-        currentUser = newUsername;
-        window.location.href = 'dashboard.html';
-      } else {
-        alert('Error al crear el usuario.');
-      }
+      currentUser = newUsername;
+      window.location.href = 'dashboard.html';
     }
   } catch (error) {
     console.error('Error al procesar Google Sign-In:', error);
@@ -267,13 +190,13 @@ function connectGoogleToUser(username) {
 }
 
 // Autenticación tradicional
-document.addEventListener('DOMContentLoaded', async function() {
-  await loadAvailableUsers();
+document.addEventListener('DOMContentLoaded', function() {
+  loadAvailableUsers();
   initializeGoogleAuth();
 
   const loginForm = document.getElementById('loginForm');
   if (loginForm) {
-    loginForm.addEventListener('submit', async function(event) {
+    loginForm.addEventListener('submit', function(event) {
       event.preventDefault();
 
       const user = document.getElementById('userSelect').value;
@@ -288,10 +211,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         return;
       }
 
-      // Validación con contraseña local
+      // Validación con contraseña local; para cuentas Google, usar "Iniciar sesión con Google"
       if (users[user].password && users[user].password === pass) {
         users[user].lastLogin = new Date().toISOString();
-        await saveUserToDB(user, users[user]);
         currentUser = user;
 
         if (users[user].role === 'admin') {

@@ -1,73 +1,130 @@
-// Sistema de usuarios mejorado
-function safeParseJSON(str, fallback) {
+// Sistema de usuarios con base de datos
+// Nota: Requiere un backend con API REST para manejar la base de datos
+
+// Configuración de la API
+const API_BASE_URL = '/api'; // Ajustar según tu backend
+
+// Estado en memoria (cache local)
+let users = {};
+let sharedEvents = [];
+let currentUser = null;
+let pendingGoogleConnectUser = null;
+
+// Funciones de API para comunicarse con la base de datos
+async function apiRequest(endpoint, options = {}) {
   try {
-    return str ? JSON.parse(str) : fallback;
-  } catch (e) {
-    console.warn('Error parseando JSON:', e);
-    return fallback;
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+      },
+      ...options
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('API request failed:', error);
+    throw error;
   }
 }
 
-const defaultUsers = {
-  admin: {
-    password: 'Li197189.13',
-    name: 'Administrador',
-    color: '#2c3e50',
-    email: 'admin@nfta-corp.com',
-    role: 'admin',
-    googleConnected: false,
-    lastLogin: null,
-    events: [],
-    sharedEvents: []
-  },
-  user1: {
-    password: '1234',
-    name: 'Marcelo Valle',
-    color: '#27ae60',
-    email: 'marcelo@nfta-corp.com',
-    role: 'user',
-    googleConnected: false,
-    lastLogin: null,
-    events: [],
-    sharedEvents: []
-  },
-   user2: {
-    password: '1234',
-    name: 'Franco valle',
-    color: '#27ae60',
-    email: 'marcelo@nfta-corp.com',
-    role: 'user',
-    googleConnected: false,
-    lastLogin: null,
-    events: [],
-    sharedEvents: []
-  },
-};
-
-let users = safeParseJSON(localStorage.getItem('users'), null) || defaultUsers;
-if (!localStorage.getItem('users')) {
-  localStorage.setItem('users', JSON.stringify(users));
+// Cargar usuarios desde la base de datos
+async function loadUsersFromDB() {
+  try {
+    const data = await apiRequest('/users');
+    users = data.users || {};
+    return users;
+  } catch (error) {
+    console.error('Error cargando usuarios:', error);
+    // Fallback a usuarios por defecto si falla la conexión
+    users = {};
+    return users;
+  }
 }
 
-let sharedEvents = safeParseJSON(localStorage.getItem('sharedEvents'), []);
-if (!Array.isArray(sharedEvents)) {
-  sharedEvents = [];
-  localStorage.setItem('sharedEvents', JSON.stringify(sharedEvents));
+// Guardar usuario en la base de datos
+async function saveUserToDB(username, userData) {
+  try {
+    await apiRequest(`/users/${username}`, {
+      method: 'PUT',
+      body: JSON.stringify(userData)
+    });
+    users[username] = userData;
+    return true;
+  } catch (error) {
+    console.error('Error guardando usuario:', error);
+    return false;
+  }
+}
+
+// Crear nuevo usuario en la base de datos
+async function createUserInDB(username, userData) {
+  try {
+    await apiRequest('/users', {
+      method: 'POST',
+      body: JSON.stringify({ username, ...userData })
+    });
+    users[username] = userData;
+    return true;
+  } catch (error) {
+    console.error('Error creando usuario:', error);
+    return false;
+  }
+}
+
+// Cargar eventos compartidos desde la base de datos
+async function loadSharedEventsFromDB() {
+  try {
+    const data = await apiRequest('/events/shared');
+    sharedEvents = data.events || [];
+    return sharedEvents;
+  } catch (error) {
+    console.error('Error cargando eventos compartidos:', error);
+    sharedEvents = [];
+    return sharedEvents;
+  }
+}
+
+// Guardar eventos compartidos en la base de datos
+async function saveSharedEventsToDB(events) {
+  try {
+    await apiRequest('/events/shared', {
+      method: 'PUT',
+      body: JSON.stringify({ events })
+    });
+    sharedEvents = events;
+    return true;
+  } catch (error) {
+    console.error('Error guardando eventos compartidos:', error);
+    return false;
+  }
 }
 
 // Cargar usuarios disponibles dinámicamente
-function loadAvailableUsers() {
+async function loadAvailableUsers() {
   const userSelect = document.getElementById('userSelect');
   if (!userSelect) return;
-  userSelect.innerHTML = '<option value="">Selecciona tu usuario</option>';
+  
+  userSelect.innerHTML = '<option value="">Cargando usuarios...</option>';
+  
+  try {
+    await loadUsersFromDB();
+    userSelect.innerHTML = '<option value="">Selecciona tu usuario</option>';
 
-  Object.keys(users).sort().forEach(username => {
-    const user = users[username];
-    const option = document.createElement('option');
-    option.value = username;
-    option.textContent = `${user.name}${user.role === 'admin' ? ' (admin)' : ''}${user.googleConnected ? ' (Google)' : ''}`;
-    userSelect.appendChild(option);
-  });
+    Object.keys(users).sort().forEach(username => {
+      const user = users[username];
+      const option = document.createElement('option');
+      option.value = username;
+      option.textContent = `${user.name}${user.role === 'admin' ? ' (admin)' : ''}${user.googleConnected ? ' (Google)' : ''}`;
+      userSelect.appendChild(option);
+    });
+  } catch (error) {
+    userSelect.innerHTML = '<option value="">Error cargando usuarios</option>';
+  }
 }
 
 // Decodificar JWT (base64url)
@@ -80,8 +137,6 @@ function parseJwt(token) {
   const jsonPayload = decodeURIComponent(atob(padded).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
   return JSON.parse(jsonPayload);
 }
-
-let pendingGoogleConnectUser = null;
 
 // Autenticación con Google
 function initializeGoogleAuth() {
@@ -96,10 +151,11 @@ function initializeGoogleAuth() {
   }
 }
 
-function handleGoogleSignIn(response) {
+async function handleGoogleSignIn(response) {
   try {
     const payload = parseJwt(response.credential);
     if (!payload) throw new Error('Token inválido');
+    
     const googleUser = {
       email: payload.email,
       name: payload.name,
@@ -114,21 +170,29 @@ function handleGoogleSignIn(response) {
         pendingGoogleConnectUser = null;
         return;
       }
-      // Conflicto si otro usuario ya tiene ese email
+      
+      // Verificar conflictos en la base de datos
       const conflict = Object.keys(users).find(u => u !== pendingGoogleConnectUser && users[u].email === googleUser.email);
       if (conflict) {
         alert('Esa cuenta de Google ya está asociada a otro usuario.');
         pendingGoogleConnectUser = null;
         return;
       }
+      
       target.googleConnected = true;
       target.email = googleUser.email;
       target.picture = googleUser.picture || target.picture;
       target.lastLogin = new Date().toISOString();
-      localStorage.setItem('users', JSON.stringify(users));
+      
+      const saved = await saveUserToDB(pendingGoogleConnectUser, target);
       pendingGoogleConnectUser = null;
-      alert('Cuenta de Google conectada correctamente.');
-      loadAvailableUsers();
+      
+      if (saved) {
+        alert('Cuenta de Google conectada correctamente.');
+        loadAvailableUsers();
+      } else {
+        alert('Error al conectar la cuenta de Google.');
+      }
       return;
     }
 
@@ -138,22 +202,25 @@ function handleGoogleSignIn(response) {
       users[existingUsername].googleConnected = true;
       users[existingUsername].lastLogin = new Date().toISOString();
       users[existingUsername].picture = googleUser.picture;
-      localStorage.setItem('users', JSON.stringify(users));
-      localStorage.setItem('currentUser', existingUsername);
+      
+      await saveUserToDB(existingUsername, users[existingUsername]);
+      currentUser = existingUsername;
+      
       if (users[existingUsername].role === 'admin') {
         window.location.href = 'admin.html';
       } else {
         window.location.href = 'dashboard.html';
       }
     } else {
-      // Crear nombre de usuario único basado en el email
+      // Crear nuevo usuario
       const base = (googleUser.email.split('@')[0] || 'user').replace(/[^a-z0-9_\-\.]/gi, '').toLowerCase() || 'user';
       let newUsername = base;
       let idx = 1;
       while (users[newUsername]) {
         newUsername = base + idx++;
       }
-      users[newUsername] = {
+      
+      const newUser = {
         password: '',
         name: googleUser.name,
         color: '#3498db',
@@ -165,9 +232,14 @@ function handleGoogleSignIn(response) {
         events: [],
         sharedEvents: []
       };
-      localStorage.setItem('users', JSON.stringify(users));
-      localStorage.setItem('currentUser', newUsername);
-      window.location.href = 'dashboard.html';
+      
+      const created = await createUserInDB(newUsername, newUser);
+      if (created) {
+        currentUser = newUsername;
+        window.location.href = 'dashboard.html';
+      } else {
+        alert('Error al crear el usuario.');
+      }
     }
   } catch (error) {
     console.error('Error al procesar Google Sign-In:', error);
@@ -195,13 +267,13 @@ function connectGoogleToUser(username) {
 }
 
 // Autenticación tradicional
-document.addEventListener('DOMContentLoaded', function() {
-  loadAvailableUsers();
+document.addEventListener('DOMContentLoaded', async function() {
+  await loadAvailableUsers();
   initializeGoogleAuth();
 
   const loginForm = document.getElementById('loginForm');
   if (loginForm) {
-    loginForm.addEventListener('submit', function(event) {
+    loginForm.addEventListener('submit', async function(event) {
       event.preventDefault();
 
       const user = document.getElementById('userSelect').value;
@@ -216,11 +288,11 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
       }
 
-      // Validación con contraseña local; para cuentas Google, usar "Iniciar sesión con Google"
+      // Validación con contraseña local
       if (users[user].password && users[user].password === pass) {
         users[user].lastLogin = new Date().toISOString();
-        localStorage.setItem('users', JSON.stringify(users));
-        localStorage.setItem('currentUser', user);
+        await saveUserToDB(user, users[user]);
+        currentUser = user;
 
         if (users[user].role === 'admin') {
           window.location.href = 'admin.html';

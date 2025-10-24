@@ -1,16 +1,46 @@
 // Configuraciones del Dashboard
 class DashboardConfig {
     constructor() {
-        this.viewingUser = localStorage.getItem('viewingUser');
-        this.currentUser = localStorage.getItem('currentUser');
-        this.actualUser = this.viewingUser || this.currentUser;
-        this.users = JSON.parse(localStorage.getItem('users')) || {};
+        this.viewingUser = null;
+        this.currentUser = null;
+        this.actualUser = null;
+        this.users = {};
+        this.apiBaseUrl = '/api'; // Ajusta según tu configuración
         this.init();
     }
 
-    init() {
+    async init() {
+        await this.loadCurrentUser();
+        await this.loadUsers();
         this.applyUserTheme();
         this.loadUserPreferences();
+    }
+
+    // Cargar usuario actual desde la base de datos
+    async loadCurrentUser() {
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/current-user`);
+            if (response.ok) {
+                const userData = await response.json();
+                this.currentUser = userData.username;
+                this.viewingUser = userData.viewingUser || null;
+                this.actualUser = this.viewingUser || this.currentUser;
+            }
+        } catch (error) {
+            console.error('Error cargando usuario actual:', error);
+        }
+    }
+
+    // Cargar usuarios desde la base de datos
+    async loadUsers() {
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/users`);
+            if (response.ok) {
+                this.users = await response.json();
+            }
+        } catch (error) {
+            console.error('Error cargando usuarios:', error);
+        }
     }
 
     // Aplicar tema del usuario al dashboard
@@ -66,11 +96,6 @@ class DashboardConfig {
         if (!this.actualUser || !this.users[this.actualUser]) return;
 
         const user = this.users[this.actualUser];
-        
-        // Aquí se pueden cargar otras preferencias como:
-        // - Configuración del calendario
-        // - Preferencias de notificaciones
-        // - Configuración de widgets
         console.log('Preferencias del usuario cargadas:', user);
     }
 
@@ -86,19 +111,30 @@ class DashboardConfig {
             (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
     }
 
-    // Actualizar configuración del usuario
-    updateUserConfig(newConfig) {
-        if (!this.actualUser || !this.users[this.actualUser]) return false;
+    // Actualizar configuración del usuario en la base de datos
+    async updateUserConfig(newConfig) {
+        if (!this.actualUser) return false;
 
         try {
-            // Actualizar configuración
-            Object.assign(this.users[this.actualUser], newConfig);
-            localStorage.setItem('users', JSON.stringify(this.users));
-            
-            // Aplicar cambios inmediatamente
-            this.applyUserTheme();
-            
-            return true;
+            const response = await fetch(`${this.apiBaseUrl}/users/${this.actualUser}/config`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(newConfig)
+            });
+
+            if (response.ok) {
+                // Actualizar configuración local
+                if (this.users[this.actualUser]) {
+                    Object.assign(this.users[this.actualUser], newConfig);
+                }
+                
+                // Aplicar cambios inmediatamente
+                this.applyUserTheme();
+                return true;
+            }
+            return false;
         } catch (error) {
             console.error('Error actualizando configuración:', error);
             return false;
@@ -112,39 +148,58 @@ class DashboardConfig {
     }
 
     // Aplicar cambios de configuración desde configuracion.html
-    applyConfigChanges() {
-        // Este método se llama cuando se regresa desde configuracion.html
-        this.users = JSON.parse(localStorage.getItem('users')) || {};
+    async applyConfigChanges() {
+        await this.loadUsers();
         this.applyUserTheme();
-        
-        // Limpiar la bandera de cambios
-        localStorage.removeItem('configChanged');
     }
     
     // Verificar si hay cambios pendientes
-    checkForConfigChanges() {
-        const configChanged = localStorage.getItem('configChanged');
-        if (configChanged === 'true') {
-            this.applyConfigChanges();
+    async checkForConfigChanges() {
+        // Recargar datos desde la base de datos para obtener cambios
+        await this.loadUsers();
+        this.applyUserTheme();
+    }
+
+    // Establecer usuario que se está visualizando
+    async setViewingUser(username) {
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/set-viewing-user`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ viewingUser: username })
+            });
+
+            if (response.ok) {
+                this.viewingUser = username;
+                this.actualUser = username || this.currentUser;
+                this.applyUserTheme();
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Error estableciendo usuario de visualización:', error);
+            return false;
         }
     }
 }
 
 // Inicializar configuración cuando se carga el dashboard
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     window.dashboardConfig = new DashboardConfig();
 });
 
 // Función global para aplicar cambios cuando se regresa de configuraciones
-function refreshDashboardConfig() {
+async function refreshDashboardConfig() {
     if (window.dashboardConfig) {
-        window.dashboardConfig.checkForConfigChanges();
+        await window.dashboardConfig.checkForConfigChanges();
     }
 }
 
-// Verificar cambios cuando la página se vuelve visible (por si se regresa de otra pestaña)
-document.addEventListener('visibilitychange', () => {
+// Verificar cambios cuando la página se vuelve visible
+document.addEventListener('visibilitychange', async () => {
     if (!document.hidden && window.dashboardConfig) {
-        window.dashboardConfig.checkForConfigChanges();
+        await window.dashboardConfig.checkForConfigChanges();
     }
 });

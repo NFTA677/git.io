@@ -1,30 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-    // Safe JSON parse
-    function safeParse(item) {
-        try {
-            return JSON.parse(item);
-        } catch (e) {
-            return null;
-        }
-    }
-
-    function getUsers() {
-        return safeParse(localStorage.getItem('users')) || {};
-    }
-
-    // currentUser can be stored as string or object; normalize to username string
-    function getCurrentUsername() {
-        const raw = safeParse(localStorage.getItem('currentUser'));
-        if (raw === null) {
-            // not JSON, maybe plain string
-            return localStorage.getItem('currentUser') || null;
-        }
-        if (typeof raw === 'string') return raw;
-        if (typeof raw === 'object' && raw.username) return raw.username;
-        return null;
-    }
-
     // Basic HTML escaping to avoid injection when using innerHTML
     function escapeHtml(str) {
         return String(str || '').replace(/[&<>"'`=\/]/g, s =>
@@ -32,10 +7,82 @@ document.addEventListener('DOMContentLoaded', () => {
         );
     }
 
-    function initAdminPanel() {
+    function getQueryParam(name) {
+        return new URLSearchParams(window.location.search).get(name);
+    }
+
+    // API functions to interact with database
+    async function fetchUsers() {
+        try {
+            const response = await fetch('/api/users');
+            if (!response.ok) throw new Error('Failed to fetch users');
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching users:', error);
+            return {};
+        }
+    }
+
+    async function getCurrentUser() {
+        try {
+            const response = await fetch('/api/current-user');
+            if (!response.ok) throw new Error('Failed to fetch current user');
+            const data = await response.json();
+            return data.username || null;
+        } catch (error) {
+            console.error('Error fetching current user:', error);
+            return getQueryParam('currentUser') || null;
+        }
+    }
+
+    async function updateUserSession(username) {
+        try {
+            await fetch('/api/user-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username })
+            });
+        } catch (error) {
+            console.error('Error updating user session:', error);
+        }
+    }
+
+    async function logout() {
+        try {
+            await fetch('/api/logout', { method: 'POST' });
+        } catch (error) {
+            console.error('Error during logout:', error);
+        }
+    }
+
+    // In-memory cache for performance
+    const cache = {
+        users: {},
+        currentUser: null,
+        lastFetch: 0
+    };
+
+    async function getUsers() {
+        const now = Date.now();
+        // Refresh cache every 5 minutes
+        if (now - cache.lastFetch > 300000) {
+            cache.users = await fetchUsers();
+            cache.lastFetch = now;
+        }
+        return cache.users;
+    }
+
+    async function getCurrentUsername() {
+        if (!cache.currentUser) {
+            cache.currentUser = await getCurrentUser();
+        }
+        return cache.currentUser;
+    }
+
+    async function initAdminPanel() {
         setupEventListeners();
-        loadUserData();
-        displayAdminName();
+        await loadUserData();
+        await displayAdminName();
     }
 
     function setupEventListeners() {
@@ -55,27 +102,32 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function handleLogout() {
+    async function handleLogout() {
         console.log('Logging out...');
-        localStorage.removeItem('currentUser');
-        localStorage.removeItem('viewingUser');
+        await logout();
+        cache.currentUser = null;
+        cache.users = {};
         window.location.href = 'index.html';
     }
 
-    function loadUserData() {
-        const users = getUsers();
+    async function loadUserData() {
+        const users = await getUsers();
         const userListContainer = document.getElementById('user-list');
         if (!userListContainer) return;
 
-        userListContainer.innerHTML = '';
+        userListContainer.innerHTML = '<p>Cargando usuarios...</p>';
 
+        const userCards = [];
         for (const username in users) {
             if (Object.prototype.hasOwnProperty.call(users, username)) {
                 const user = users[username] || {};
                 const userCard = createUserCard(username, user);
-                userListContainer.appendChild(userCard);
+                userCards.push(userCard);
             }
         }
+
+        userListContainer.innerHTML = '';
+        userCards.forEach(card => userListContainer.appendChild(card));
     }
 
     function createUserCard(username, user) {
@@ -102,20 +154,20 @@ document.addEventListener('DOMContentLoaded', () => {
         return card;
     }
 
-    function viewUserDashboard(username) {
-        const users = getUsers();
+    async function viewUserDashboard(username) {
+        const users = await getUsers();
         if (users[username]) {
-            localStorage.setItem('viewingUser', username);
-            window.location.href = 'dashboard.html';
+            await updateUserSession(username);
+            window.location.href = `dashboard.html?user=${encodeURIComponent(username)}`;
         } else {
             alert('Usuario no encontrado.');
         }
     }
 
-    function displayAdminName() {
-        const currentUser = getCurrentUsername();
+    async function displayAdminName() {
+        const currentUser = await getCurrentUsername();
         if (!currentUser) return;
-        const users = getUsers();
+        const users = await getUsers();
         if (users[currentUser]) {
             const adminNameElement = document.getElementById('admin-name');
             if (adminNameElement) {

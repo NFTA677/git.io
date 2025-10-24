@@ -3,7 +3,7 @@
 
 const defaultUsers = {
   admin: {
-    password: 'Li197189.13',
+    password: 'adminpass',
     name: 'Administrador',
     color: '#2c3e50',
     email: 'admin@nfta-corp.com',
@@ -15,7 +15,7 @@ const defaultUsers = {
   },
   user1: {
     password: '1234',
-    name: 'Marcelo Valle',
+    name: 'Marcelo del Valle',
     color: '#27ae60',
     email: 'marcelo@nfta-corp.com',
     role: 'user',
@@ -25,8 +25,8 @@ const defaultUsers = {
     sharedEvents: []
   },
   user2: {
-    password: '1234',
-    name: 'Franko Valle',
+    password: 'user2pass',
+    name: 'Usuario 2',
     color: '#3498db',
     email: 'user2@nfta-corp.com',
     role: 'user',
@@ -37,7 +37,7 @@ const defaultUsers = {
   },
   user3: {
     password: 'user3pass',
-    name: 'Jan Carlo',
+    name: 'Usuario 3',
     color: '#e74c3c',
     email: 'user3@nfta-corp.com',
     role: 'user',
@@ -46,7 +46,17 @@ const defaultUsers = {
     events: [],
     sharedEvents: []
   },
-  
+  user4: {
+    password: 'user4pass',
+    name: 'Usuario 4',
+    color: '#9b59b6',
+    email: 'user4@nfta-corp.com',
+    role: 'user',
+    googleConnected: false,
+    lastLogin: null,
+    events: [],
+    sharedEvents: []
+  }
 };
 
 // Estado en memoria

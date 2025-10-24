@@ -2,13 +2,15 @@
 -- PostgreSQL schema for application configuration
 -- This file defines tables for managing various application settings and configurations.
 
-BEGIN;
-
 -- Ensure uuid generator is available before using it in defaults
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
+GO
 
 -- 1. Schema for configuration
-CREATE SCHEMA IF NOT EXISTS configuracion;
+CREATE SCHEMA configuracion;
+GO
+
+BEGIN;
 
 -- 2. Application Settings
 -- Stores global application settings as key-value pairs.
